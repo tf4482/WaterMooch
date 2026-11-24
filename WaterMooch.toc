@@ -7,6 +7,7 @@
 ## IconTexture: Interface/Icons/INV_Drink_18
 ## SavedVariables: WaterMoochDB
 ## SavedVariablesPerCharacter: WaterMoochCharDB
+## X-Curse-Project-ID: 1827454
 
 Output.lua
 Store.lua
