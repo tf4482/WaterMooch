@@ -31,7 +31,7 @@ window:SetScript("OnDragStop", window.StopMovingOrSizing)
 window:Hide()
 window.TitleText:SetText("Mages nearby")
 
--- secure row buttons: the macro targets, PostClick marks and whispers
+-- secure row buttons: left click targets and marks, right click whispers
 local rows = {}
 for index = 1, ROWS do
   local row = CreateFrame("Button", nil, window, "SecureActionButtonTemplate")
@@ -40,20 +40,23 @@ for index = 1, ROWS do
   row:SetPoint("TOPRIGHT", window, "TOPRIGHT", -12, -28 - (index - 1) * ROW_HEIGHT)
   -- both phases so the click works with either ActionButtonUseKeyDown setting
   row:RegisterForClicks("AnyUp", "AnyDown")
-  row:SetAttribute("type", "macro")
+  -- only the left button runs the target macro
+  row:SetAttribute("type1", "macro")
   row:SetHighlightTexture("Interface/QuestFrame/UI-QuestTitleHighlight", "ADD")
   local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   label:SetPoint("LEFT", row, "LEFT", 4, 0)
   row:SetFontString(label)
-  -- after the secure target: blue square and whisper, once per click
-  row:SetScript("PostClick", function(self, _, down)
+  -- once per click: blue square after the left-click target, whisper on right click
+  row:SetScript("PostClick", function(self, button, down)
     if down ~= GetCVarBool("ActionButtonUseKeyDown") or not self.name or InCombatLockdown() then
       return
     end
-    if GetUnitName("target", true) == self.name and GetRaidTargetIndex("target") ~= SQUARE then
+    if button == "RightButton" then
+      Whisper(self.name)
+    elseif button == "LeftButton" and GetUnitName("target", true) == self.name
+      and GetRaidTargetIndex("target") ~= SQUARE then
       SetRaidTarget("target", SQUARE)
     end
-    Whisper(self.name)
   end)
   row:Hide()
   rows[index] = row
@@ -150,7 +153,7 @@ local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
 hint:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -8)
 hint:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
 hint:SetJustifyH("LEFT")
-hint:SetText("Sent to the mage you click in the list; saved on Enter or when leaving the field.")
+hint:SetText("Sent to the mage you right-click in the list; saved on Enter or when leaving the field.")
 local input = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
 input:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 6, -12)
 input:SetPoint("RIGHT", panel, "RIGHT", -24, 0)

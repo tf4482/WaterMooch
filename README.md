@@ -1,14 +1,15 @@
 # WaterMooch
 
 On a slash command or key press, WaterMooch lists the mages around you in a small window;
-one click targets the mage, marks them with a blue square, and whispers them your own text.
+a left click targets the mage and marks them with a blue square, a right click whispers
+them your own text.
 
 ## Features
 
 - **Scan on demand** - `/wm scan` or your own key binding (Options > Keybindings > AddOns)
   lists the friendly mages nearby (nameplates, group, target, mouseover) in a movable window.
-- **One-click request** - clicking a name targets the mage, sets the blue square marker,
-  and sends your whisper.
+- **Target and mark** - left-click a name to target the mage and set the blue square marker.
+- **Whisper** - right-click the name to send your whisper; a left click never whispers.
 - **Own whisper text** - type the whisper on the page Options > AddOns > WaterMooch >
   Whisper, or set it by chat command.
 - **Remembered** - settings are saved per account, or per character with one checkbox.
@@ -39,7 +40,7 @@ without hovering or targeting them.
 
 ## Examples
 
-- In a city, type `/wm scan`; mages near you show up in the window; click one.
+- In a city, type `/wm scan`; mages near you show up in the window; left-click one, then right-click to ask.
 - Bind a key under Options > Keybindings > AddOns > "WaterMooch: Scan for mages" and press
   it whenever you need water.
 - Change the request: `/wm message "Hey, could you open a portal to Stormwind? Tip ready!"`
