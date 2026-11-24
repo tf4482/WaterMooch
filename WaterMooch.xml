@@ -31,4 +31,33 @@
       </ScrollFrame>
     </Frames>
   </Frame>
+
+  <!-- Settings page element: label, slider with steppers, and a number field to its right -->
+  <Frame name="WaterMoochTimeTemplate" virtual="true">
+    <Size x="600" y="26"/>
+    <Layers>
+      <Layer level="OVERLAY">
+        <FontString parentKey="Label" inherits="GameFontNormal" justifyH="LEFT">
+          <Anchors>
+            <Anchor point="LEFT" x="37"/>
+            <Anchor point="RIGHT" relativePoint="CENTER" x="-85"/>
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Frames>
+      <Frame parentKey="Slider" inherits="MinimalSliderWithSteppersTemplate">
+        <Size x="200" y="20"/>
+        <Anchors>
+          <Anchor point="LEFT" relativePoint="CENTER" x="-80" y="3"/>
+        </Anchors>
+      </Frame>
+      <EditBox parentKey="Input" inherits="InputBoxTemplate" autoFocus="false" letters="5">
+        <Size x="50" y="20"/>
+        <Anchors>
+          <Anchor point="LEFT" relativeKey="$parent.Slider" relativePoint="RIGHT" x="16" y="0"/>
+        </Anchors>
+      </EditBox>
+    </Frames>
+  </Frame>
 </Ui>

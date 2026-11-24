@@ -10,8 +10,31 @@ local ROWS = 10
 local ROW_HEIGHT = 20
 -- seconds a mage seen in passing still counts as nearby
 local RECENT = 60
+-- nameplate time slider positions: 0.01 to 0.09, then 0.1 to 3.0
+local TIME_STEPS = 39
 -- former default of the Alt+right click whisper, replaced on load
 local OLD_ALT_MESSAGE = "Hi! Could you spare some food, please? Thank you!"
+
+-- seconds for a nameplate time slider position
+local function StepTime(step)
+  if step < 10 then
+    return step / 100
+  end
+  return (step - 9) / 10
+end
+
+-- nearest nameplate time slider position for seconds
+local function TimeStep(seconds)
+  if seconds < 0.095 then
+    return math.max(1, math.floor(seconds * 100 + 0.5))
+  end
+  return math.min(TIME_STEPS, math.floor(seconds * 10 + 0.5) + 9)
+end
+
+-- seconds with two decimals below 0.1, otherwise one
+local function FormatTime(seconds)
+  return format(seconds < 0.095 and "%.2f" or "%.1f", seconds)
+end
 
 -- last sighting of each mage by unit name: { time, level }
 local seen = {}
@@ -210,7 +233,7 @@ end
 local function Status()
   ShowSet("whisper (right click)", "message")
   ShowSet("alt whisper (Alt+right click)", "altMessage")
-  ns.Status("nameplate time", format("%.1f s", ns.Get("plateTime")))
+  ns.Status("nameplate time", FormatTime(ns.Get("plateTime")) .. " s")
   ns.Status("minimum level", ns.Get("minLevel"))
   ns.Status("per character", ns.OnOff(ns.char.perCharacter))
   ns.Detail("scan with " .. ns.Color("command", ns.slash .. " scan") .. " or your key binding")
@@ -276,23 +299,59 @@ local function FindCategory()
   end
 end
 
--- nameplate time slider showing one decimal; ns.Slider has no label format
+-- nameplate time element currently shown on the settings page
+local timeFrame
+
+-- show the saved nameplate time in the visible element
+local function ShowTime()
+  if timeFrame and timeFrame:IsVisible() then
+    local seconds = ns.Get("plateTime")
+    timeFrame.Slider:SetValue(TimeStep(seconds))
+    timeFrame.Input:SetText(FormatTime(seconds))
+  end
+end
+
+-- save a nameplate time, snapped to the slider steps
+local function SetTime(seconds)
+  SaveValue("plateTime", StepTime(TimeStep(seconds)))
+  ShowTime()
+end
+
+-- nameplate time slider with 0.01 steps below 0.1 and a number field to its right;
+-- ns.Slider has neither uneven steps nor a number field
 local function AddTimeSlider(category)
-  local key = "plateTime"
-  local setting = Settings.RegisterProxySetting(category, ADDON .. "_" .. key, "number",
-    "Nameplate time", ns.defaults.db[key],
-    function() return ns.Get(key) end,
-    function(value) SaveValue(key, value) end)
-  local options = Settings.CreateSliderOptions(0.1, 3, 0.1)
-  options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
-    return format("%.1f s", value)
-  end)
-  Settings.CreateSlider(category, setting, options,
-    "Seconds a scan shows friendly nameplates before reading them")
-  -- show the value of the new profile after a switch
-  Settings.SetOnValueChangedCallback(ADDON .. "_perCharacter", function()
-    setting:NotifyUpdate()
-  end)
+  local initializer = Settings.CreateElementInitializer("WaterMoochTimeTemplate", { name = "Nameplate time" })
+  -- fill a list frame from the template whenever the page shows it
+  initializer.InitFrame = function(_, frame)
+    timeFrame = frame
+    frame.Label:SetText("Nameplate time")
+    frame.Slider:Init(TimeStep(ns.Get("plateTime")), 1, TIME_STEPS, TIME_STEPS - 1)
+    -- slider moved: save and show the new time
+    frame.Slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, step)
+      local seconds = StepTime(math.floor(step + 0.5))
+      SaveValue("plateTime", seconds)
+      frame.Input:SetText(FormatTime(seconds))
+    end, frame)
+    local input = frame.Input
+    input:SetText(FormatTime(ns.Get("plateTime")))
+    input:SetScript("OnEnterPressed", input.ClearFocus)
+    -- typed time: save it within 0.01 to 3, or show the saved one again
+    input:SetScript("OnEditFocusLost", function(self)
+      local seconds = tonumber((self:GetText():gsub(",", ".")))
+      if seconds then
+        SetTime(math.min(math.max(seconds, 0.01), 3))
+      else
+        ShowTime()
+      end
+    end)
+    -- discard the typing
+    input:SetScript("OnEscapePressed", function(self)
+      self:SetText(FormatTime(ns.Get("plateTime")))
+      self:ClearFocus()
+    end)
+  end
+  Settings.RegisterInitializer(category, initializer)
+  Settings.SetOnValueChangedCallback(ADDON .. "_perCharacter", ShowTime)
 end
 
 -- add the scan key binding and both whisper fields below the addon's settings controls
@@ -372,10 +431,10 @@ ns.Command({ name = "scan", help = "list the mages nearby", run = Scan })
 ns.Command({
   name = "time",
   help = "seconds a scan shows friendly nameplates",
-  args = { { name = "seconds", type = "number", min = 0.1, max = 3 } },
+  args = { { name = "seconds", type = "number", min = 0.01, max = 3 } },
   run = function(args)
-    ns.Set("plateTime", args.seconds)
-    ns.Status("nameplate time", format("%.1f s", args.seconds))
+    SetTime(args.seconds)
+    ns.Status("nameplate time", FormatTime(ns.Get("plateTime")) .. " s")
   end,
 })
 ns.Command({
