@@ -1,0 +1,6 @@
+<!-- Key binding: Options > Keybindings > AddOns > WaterMooch: Scan for mages -->
+<Bindings>
+  <Binding name="WATERMOOCH_SCAN" category="ADDONS">
+    SlashCmdList.WATERMOOCH("scan")
+  </Binding>
+</Bindings>
