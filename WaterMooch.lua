@@ -1,6 +1,6 @@
 -- WaterMooch: lists nearby mages on demand; a click targets, marks, and whispers one
 
-local _, ns = ...
+local ADDON, ns = ...
 
 -- raid target icon index of the blue square
 local SQUARE = 6
@@ -135,11 +135,53 @@ local function PerCharacter(enabled)
   Status()
 end
 
--- save the whisper text in the active profile; the settings page has no text field
-local function SetMessage(text)
+-- save the whisper text in the active profile; Settings.lua has no text control
+local function SaveMessage(text)
   local profile = ns.char.perCharacter and ns.char or ns.db
   profile.message = text
-  ns.Status("whisper", text)
+end
+
+-- whisper page in Options > AddOns > WaterMooch, with a text field
+local panel = CreateFrame("Frame")
+local heading = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+heading:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
+heading:SetText("Whisper")
+local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+hint:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -8)
+hint:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
+hint:SetJustifyH("LEFT")
+hint:SetText("Sent to the mage you click in the list; saved on Enter or when leaving the field.")
+local input = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
+input:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 6, -12)
+input:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
+input:SetHeight(24)
+input:SetAutoFocus(false)
+input:SetMaxLetters(255)
+-- save the typed text
+input:SetScript("OnEditFocusLost", function(self)
+  SaveMessage(self:GetText())
+end)
+input:SetScript("OnEnterPressed", input.ClearFocus)
+-- discard the typing and show the saved text again
+input:SetScript("OnEscapePressed", function(self)
+  self:SetText(ns.Get("message"))
+  self:ClearFocus()
+end)
+-- show the text of the active profile whenever the page opens
+panel:SetScript("OnShow", function()
+  input:SetText(ns.Get("message"))
+  input:SetCursorPosition(0)
+end)
+
+-- attach the whisper page below the addon's settings page
+local function AddWhisperPage()
+  local title = C_AddOns.GetAddOnMetadata(ADDON, "Title") or ADDON
+  for _, category in ipairs(SettingsPanel:GetAllCategories()) do
+    if category:GetName() == title then
+      Settings.RegisterCanvasLayoutSubcategory(category, panel, "Whisper")
+      return
+    end
+  end
 end
 
 -- event handlers by event name
@@ -164,6 +206,7 @@ ns.Store("WaterMoochDB", {
   message = "Hi! Could you spare some water, please? Thank you!",
 }, function()
   ns.Settings()
+  AddWhisperPage()
 end)
 
 -- chat commands
@@ -172,7 +215,10 @@ ns.Command({
   name = "message",
   help = "set the whisper text (use quotes)",
   args = { { name = "text" } },
-  run = function(args) SetMessage(args.text) end,
+  run = function(args)
+    SaveMessage(args.text)
+    ns.Status("whisper", args.text)
+  end,
 })
 ns.Command({
   name = "character",
