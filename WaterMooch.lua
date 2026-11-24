@@ -8,6 +8,13 @@ local SQUARE = 6
 local ROWS = 10
 -- row height in pixels
 local ROW_HEIGHT = 20
+-- seconds a mage seen in passing still counts as nearby
+local RECENT = 60
+-- former default of the Alt+right click whisper, replaced on load
+local OLD_ALT_MESSAGE = "Hi! Could you spare some food, please? Thank you!"
+
+-- last time each mage was seen, by unit name
+local seen = {}
 
 -- label in Options > Keybindings > AddOns
 _G["BINDING_NAME_WATERMOOCH_SCAN"] = "WaterMooch: Scan for mages"
@@ -79,16 +86,16 @@ for index = 1, ROWS do
   rows[index] = row
 end
 
--- add a unit's name if it is a visible, friendly mage other than the player
-local function See(unit, found)
-  if not UnitExists(unit) or not UnitIsPlayer(unit) or UnitIsUnit(unit, "player")
-    or not UnitIsVisible(unit) or not UnitIsFriend("player", unit) then
+-- remember a unit if it is a visible, friendly mage other than the player
+local function See(unit)
+  if not unit or InCombatLockdown() or not UnitExists(unit) or not UnitIsPlayer(unit)
+    or UnitIsUnit(unit, "player") or not UnitIsVisible(unit) or not UnitIsFriend("player", unit) then
     return
   end
   local _, class = UnitClass(unit)
   local name = GetUnitName(unit, true)
   if class == "MAGE" and name then
-    found[name] = true
+    seen[name] = GetTime()
   end
 end
 
@@ -116,27 +123,35 @@ local function Scan()
   if InCombatLockdown() then
     return ns.Error("scanning is not available right now")
   end
-  local found = {}
-  for index = 1, 40 do
-    See("nameplate" .. index, found)
+  for _, plate in ipairs(C_NamePlate.GetNamePlates()) do
+    See(plate.namePlateUnitToken or (plate.UnitFrame and plate.UnitFrame.unit))
   end
   local group, size = "party", 4
   if IsInRaid() then
     group, size = "raid", 40
   end
   for index = 1, size do
-    See(group .. index, found)
+    See(group .. index)
   end
-  See("target", found)
-  See("mouseover", found)
-  local names = {}
-  for name in pairs(found) do
-    names[#names + 1] = name
+  See("target")
+  See("mouseover")
+  -- everyone seen now or within the last RECENT seconds
+  local names, now = {}, GetTime()
+  for name, time in pairs(seen) do
+    if now - time > RECENT then
+      seen[name] = nil
+    else
+      names[#names + 1] = name
+    end
   end
   table.sort(names)
   Render(names)
   if #names == 0 then
     ns.Warn("no mages found nearby")
+    if not GetCVarBool("nameplateShowFriendlyPlayers") and not GetCVarBool("nameplateShowFriends") then
+      ns.Detail("turn on friendly player nameplates (" .. ns.Color("command", "Shift+V")
+        .. ") so mages around you are found")
+    end
   else
     ns.Print(ns.Color("value", #names) .. " mage(s) found")
   end
@@ -208,11 +223,15 @@ local function AddTextArea(category, key, label, hint)
   Settings.RegisterInitializer(category, initializer)
 end
 
--- add both whisper fields below the controls of the addon's settings page
-local function AddWhisperFields()
+-- add the scan key binding and both whisper fields below the addon's settings controls
+local function AddSettingsFields()
   local title = C_AddOns.GetAddOnMetadata(ADDON, "Title") or ADDON
   for _, category in ipairs(SettingsPanel:GetAllCategories()) do
     if category:GetName() == title then
+      local binding = C_KeyBindings.GetBindingIndex("WATERMOOCH_SCAN")
+      if binding then
+        Settings.RegisterInitializer(category, CreateKeybindingEntryInitializer(binding, true))
+      end
       AddTextArea(category, "message", "Whisper (right click)",
         "One sentence per line, a random one is sent; saved when leaving the field.")
       AddTextArea(category, "altMessage", "Whisper (Alt+right click)",
@@ -225,6 +244,21 @@ end
 
 -- event handlers by event name
 local events = {}
+
+-- mages seen in passing count for the next scan
+function events.NAME_PLATE_UNIT_ADDED(unit)
+  See(unit)
+end
+
+-- mouse over a unit: remember it if it is a mage
+function events.UPDATE_MOUSEOVER_UNIT()
+  See("mouseover")
+end
+
+-- new target: remember it if it is a mage
+function events.PLAYER_TARGET_CHANGED()
+  See("target")
+end
 
 -- secure rows cannot be hidden later: close the window now
 function events.PLAYER_REGEN_DISABLED()
@@ -243,10 +277,16 @@ end)
 -- saved state; settings page once loaded
 ns.Store("WaterMoochDB", {
   message = "Hi! Could you spare some water, please? Thank you!",
-  altMessage = "Hi! Could you spare some food, please? Thank you!",
-}, function()
+  altMessage = "Thank you so much for the water, have a great day!",
+}, function(db)
+  -- replace the former default, keep texts the player wrote
+  for _, profile in ipairs({ db, ns.char }) do
+    if profile.altMessage == OLD_ALT_MESSAGE then
+      profile.altMessage = ns.defaults.db.altMessage
+    end
+  end
   ns.Settings()
-  AddWhisperFields()
+  AddSettingsFields()
 end)
 
 -- chat commands
