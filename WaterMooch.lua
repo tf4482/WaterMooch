@@ -38,7 +38,7 @@ local function FormatTime(seconds)
   return format(seconds < 0.095 and "%.2f" or "%.1f", seconds)
 end
 
--- last sighting of each mage by unit name: { time, level }
+-- last sighting of each mage by unit name: { time, level, guild }
 local seen = {}
 
 -- label in Options > Keybindings > AddOns
@@ -116,7 +116,7 @@ local function See(unit)
   if class == "MAGE" and name then
     -- -1 means far above the player's level
     local level = UnitLevel(unit)
-    seen[name] = { time = GetTime(), level = level < 0 and math.huge or level }
+    seen[name] = { time = GetTime(), level = level < 0 and math.huge or level, guild = GetGuildInfo(unit) }
   end
 end
 
@@ -133,7 +133,11 @@ local function Render(names)
       -- square, and stop when the mage could not be targeted
       row:SetAttribute("macrotext", "/cleartarget\n/targetexact " .. name
         .. "\n/stopmacro [noexists]\n/tm !" .. SQUARE)
-      row:SetText(color:WrapTextInColorCode(name))
+      -- name, level ("??" far above the player), and <guild> when there is one
+      local sighting = seen[name]
+      local level = sighting.level == math.huge and "??" or sighting.level
+      local guild = sighting.guild and " " .. ns.Color("success", "<" .. sighting.guild .. ">") or ""
+      row:SetText(color:WrapTextInColorCode(name) .. " " .. ns.Color("value", level) .. guild)
       row:Show()
       -- row insets and label padding around the name
       width = math.max(width, row:GetFontString():GetStringWidth() + 40)

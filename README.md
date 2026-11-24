@@ -8,7 +8,7 @@ them your own text, Alt+right click a second one.
 
 - **Scan on demand** - `/wm scan` or your own key binding lists the friendly mages nearby
   (nameplates, group, target, mouseover, and mages seen in the last minute) in a movable
-  window.
+  window, each with level and <guild>.
 - **Minimum level** - list only mages from a chosen level up (slider or chat command).
 - **Key binding** - set the scan key on the addon's settings page or under Options >
   Keybindings > AddOns.
