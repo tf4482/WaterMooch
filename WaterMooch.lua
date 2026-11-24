@@ -12,10 +12,26 @@ local ROW_HEIGHT = 20
 -- label in Options > Keybindings > AddOns
 _G["BINDING_NAME_WATERMOOCH_SCAN"] = "WaterMooch: Scan for mages"
 
--- send the whisper text saved under key to a player
+-- non-empty, trimmed lines of a saved whisper set: one alternative per line
+local function Lines(key)
+  local lines = {}
+  for line in ns.Get(key):gmatch("[^\n]+") do
+    line = strtrim(line)
+    if line ~= "" then
+      lines[#lines + 1] = line
+    end
+  end
+  return lines
+end
+
+-- send a random sentence of the whisper set saved under key to a player
 local function Whisper(name, key)
+  local lines = Lines(key)
+  if #lines == 0 then
+    return ns.Error("no whisper text set - see " .. ns.slash .. " config")
+  end
   local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
-  send(ns.Get(key), "WHISPER", nil, name)
+  send(lines[math.random(#lines)], "WHISPER", nil, name)
 end
 
 -- list window, movable; position kept by the game's layout cache
@@ -126,10 +142,18 @@ local function Scan()
   end
 end
 
+-- one whisper set as a numbered list
+local function ShowSet(label, key)
+  ns.Print(label .. ":")
+  for index, line in ipairs(Lines(key)) do
+    ns.Detail(ns.Color("muted", index .. ".") .. " " .. ns.Color("value", line))
+  end
+end
+
 -- current state
 local function Status()
-  ns.Status("whisper", ns.Get("message"))
-  ns.Status("alt whisper", ns.Get("altMessage"))
+  ShowSet("whisper (right click)", "message")
+  ShowSet("alt whisper (Alt+right click)", "altMessage")
   ns.Status("per character", ns.OnOff(ns.char.perCharacter))
   ns.Detail("scan with " .. ns.Color("command", ns.slash .. " scan") .. " or your key binding")
 end
@@ -154,36 +178,37 @@ heading:SetText("Whisper")
 -- text fields by setting key, refreshed when the page opens
 local inputs = {}
 
--- labeled text field below anchor for the whisper saved under key; returns the field
+-- labeled multi-line field below anchor for the whisper set saved under key
 local function TextField(anchor, key, text)
   local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   hint:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", anchor == heading and 0 or -6, -16)
   hint:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
   hint:SetJustifyH("LEFT")
   hint:SetText(text)
-  local input = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
-  input:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 6, -8)
-  input:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
-  input:SetHeight(24)
-  input:SetAutoFocus(false)
-  input:SetMaxLetters(255)
-  -- save the typed text
+  local scroll = CreateFrame("ScrollFrame", nil, panel, "InputScrollFrameTemplate")
+  scroll:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 6, -8)
+  scroll:SetSize(520, 90)
+  scroll.CharCount:Hide()
+  local input = scroll.EditBox
+  input:SetWidth(520 - 18)
+  input:SetFontObject("ChatFontNormal")
+  -- save the typed lines
   input:SetScript("OnEditFocusLost", function(self)
     SaveMessage(key, self:GetText())
   end)
-  input:SetScript("OnEnterPressed", input.ClearFocus)
-  -- discard the typing and show the saved text again
+  -- discard the typing and show the saved lines again
   input:SetScript("OnEscapePressed", function(self)
     self:SetText(ns.Get(key))
     self:ClearFocus()
   end)
   inputs[key] = input
-  return input
+  return scroll
 end
 
 local first = TextField(heading, "message",
-  "Right click on a mage in the list sends this text; saved on Enter or when leaving the field.")
-TextField(first, "altMessage", "Alt+right click sends this text instead.")
+  "Right click on a mage in the list sends one of these lines at random. One sentence per "
+  .. "line; saved when leaving the field.")
+TextField(first, "altMessage", "Alt+right click sends one of these lines at random instead.")
 
 -- show the texts of the active profile whenever the page opens
 panel:SetScript("OnShow", function()
@@ -232,24 +257,28 @@ end)
 
 -- chat commands
 ns.Command({ name = "scan", help = "list the mages nearby", run = Scan })
-ns.Command({
-  name = "message",
-  help = "set the whisper text (use quotes)",
-  args = { { name = "text" } },
-  run = function(args)
-    SaveMessage("message", args.text)
-    ns.Status("whisper", args.text)
-  end,
-})
-ns.Command({
-  name = "altmessage",
-  help = "set the Alt+right click whisper text (use quotes)",
-  args = { { name = "text" } },
-  run = function(args)
-    SaveMessage("altMessage", args.text)
-    ns.Status("alt whisper", args.text)
-  end,
-})
+-- chat command that replaces a whisper set or adds a sentence to it
+local function MessageCommand(name, key, label, help)
+  ns.Command({
+    name = name,
+    help = help,
+    args = { { name = "text" } },
+    options = { { name = "add", help = "add the sentence as one more random choice" } },
+    run = function(args, options)
+      local text = args.text
+      if options.add and #Lines(key) > 0 then
+        text = ns.Get(key) .. "\n" .. text
+      end
+      SaveMessage(key, text)
+      ShowSet(label, key)
+    end,
+  })
+end
+
+MessageCommand("message", "message", "whisper (right click)",
+  "set the right click whisper (use quotes)")
+MessageCommand("altmessage", "altMessage", "alt whisper (Alt+right click)",
+  "set the Alt+right click whisper (use quotes)")
 ns.Command({
   name = "character",
   help = "use settings for this character only, or the account's",
