@@ -1,4 +1,5 @@
 -- Shared component: saved addon state with defaults; copied unchanged from wow-lua-house-style
+-- component version: 2 (2026-11)
 
 local ADDON, ns = ...
 
