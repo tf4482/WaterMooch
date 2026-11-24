@@ -6,9 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Added
+
+- `/wmooch reset` restores the default settings of the active profile.
+- `/wmooch debug on|off` shows what the addon does in chat, until `/reload`.
+- German texts for the shared chat messages (help, errors, on/off).
+
 ### Changed
 
 - Short slash command is now `/wmooch`; `/wm` belongs to the game's world markers.
+- The scan key binding has its own section WaterMooch in Options > Keybindings.
 
 ### Fixed
 
