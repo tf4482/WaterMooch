@@ -10,6 +10,8 @@ local ROWS = 10
 local ROW_HEIGHT = 20
 -- seconds a mage seen in passing still counts as nearby
 local RECENT = 60
+-- seconds to wait for nameplates after switching them on
+local PLATE_DELAY = 0.5
 -- former default of the Alt+right click whisper, replaced on load
 local OLD_ALT_MESSAGE = "Hi! Could you spare some food, please? Thank you!"
 
@@ -115,14 +117,44 @@ local function Render(names)
   window:SetShown(shown > 0)
 end
 
--- one scan of nameplates, group, target, and mouseover; shows the result
-local function Scan()
+-- nameplate settings switched on for a scan, with the player's values to restore
+local switched = {}
+-- a scan is waiting for nameplates to appear
+local scanning = false
+
+-- show friendly player nameplates for a moment; true when anything had to change
+local function ShowPlates()
+  -- 12.x name first, older clients second; nameplateShowAll shows plates out of combat
+  local friendly = C_CVar.GetCVar("nameplateShowFriendlyPlayers") and "nameplateShowFriendlyPlayers"
+    or "nameplateShowFriends"
+  for _, cvar in ipairs({ "nameplateShowAll", friendly }) do
+    local value = C_CVar.GetCVar(cvar)
+    if value and value ~= "1" then
+      switched[cvar] = value
+      C_CVar.SetCVar(cvar, "1")
+    end
+  end
+  return next(switched) ~= nil
+end
+
+-- put the player's nameplate settings back; only out of combat
+local function RestorePlates()
+  for cvar, value in pairs(switched) do
+    C_CVar.SetCVar(cvar, value)
+    switched[cvar] = nil
+  end
+end
+
+-- read nameplates, group, target, and mouseover; show the result
+local function Collect()
+  scanning = false
   if InCombatLockdown() then
-    return ns.Error("scanning is not available right now")
+    return ns.AfterCombat(RestorePlates)
   end
   for _, plate in ipairs(C_NamePlate.GetNamePlates()) do
     See(plate.namePlateUnitToken or (plate.UnitFrame and plate.UnitFrame.unit))
   end
+  RestorePlates()
   local group, size = "party", 4
   if IsInRaid() then
     group, size = "raid", 40
@@ -145,12 +177,24 @@ local function Scan()
   Render(names)
   if #names == 0 then
     ns.Warn("no mages found nearby")
-    if not GetCVarBool("nameplateShowFriendlyPlayers") and not GetCVarBool("nameplateShowFriends") then
-      ns.Detail("turn on friendly player nameplates (" .. ns.Color("command", "Shift+V")
-        .. ") so mages around you are found")
-    end
   else
     ns.Print(ns.Color("value", #names) .. " mage(s) found")
+  end
+end
+
+-- one scan; switches friendly nameplates on briefly when they are off
+local function Scan()
+  if InCombatLockdown() then
+    return ns.Error("scanning is not available right now")
+  elseif scanning then
+    return
+  end
+  if ShowPlates() then
+    -- nameplates appear over the next frames
+    scanning = true
+    C_Timer.After(PLATE_DELAY, Collect)
+  else
+    Collect()
   end
 end
 
@@ -255,6 +299,11 @@ end
 -- new target: remember it if it is a mage
 function events.PLAYER_TARGET_CHANGED()
   See("target")
+end
+
+-- logout or reload during a scan: keep the player's nameplate settings
+function events.PLAYER_LOGOUT()
+  RestorePlates()
 end
 
 -- secure rows cannot be hidden later: close the window now
