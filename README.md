@@ -23,8 +23,9 @@ them your own text, Alt+right click a second one.
   game menu under Options > AddOns, also opened from the addon compartment menu.
 - **Chat commands** - every option can also be changed by slash command.
 
-Turn on friendly player nameplates (default key `Shift+V`) so mages nearby are found
-without hovering or targeting them.
+A scan switches friendly player nameplates on for half a second when they are off, so
+mages nearby are found without hovering or targeting them; your setting is restored
+right after.
 
 ## Install
 
