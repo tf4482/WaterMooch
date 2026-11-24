@@ -210,7 +210,7 @@ end
 local function Status()
   ShowSet("whisper (right click)", "message")
   ShowSet("alt whisper (Alt+right click)", "altMessage")
-  ns.Status("nameplate time", ns.Get("plateTime") .. " s")
+  ns.Status("nameplate time", format("%.1f s", ns.Get("plateTime")))
   ns.Status("minimum level", ns.Get("minLevel"))
   ns.Status("per character", ns.OnOff(ns.char.perCharacter))
   ns.Detail("scan with " .. ns.Color("command", ns.slash .. " scan") .. " or your key binding")
@@ -222,10 +222,10 @@ local function PerCharacter(enabled)
   Status()
 end
 
--- save a whisper text in the active profile; Settings.lua has no text control
-local function SaveMessage(key, text)
+-- save a setting in the active profile, for controls Settings.lua does not offer
+local function SaveValue(key, value)
   local profile = ns.char.perCharacter and ns.char or ns.db
-  profile[key] = text
+  profile[key] = value
 end
 
 -- text fields shown on the settings page, by setting key
@@ -254,7 +254,7 @@ local function AddTextArea(category, key, label, hint)
     input:SetCursorPosition(0)
     -- save the typed lines
     input:SetScript("OnEditFocusLost", function(self)
-      SaveMessage(key, self:GetText())
+      SaveValue(key, self:GetText())
     end)
     -- discard the typing and show the saved lines again
     input:SetScript("OnEscapePressed", function(self)
@@ -266,23 +266,46 @@ local function AddTextArea(category, key, label, hint)
   Settings.RegisterInitializer(category, initializer)
 end
 
--- add the scan key binding and both whisper fields below the addon's settings controls
-local function AddSettingsFields()
+-- the addon's settings category created by ns.Settings
+local function FindCategory()
   local title = C_AddOns.GetAddOnMetadata(ADDON, "Title") or ADDON
   for _, category in ipairs(SettingsPanel:GetAllCategories()) do
     if category:GetName() == title then
-      local binding = C_KeyBindings.GetBindingIndex("WATERMOOCH_SCAN")
-      if binding then
-        Settings.RegisterInitializer(category, CreateKeybindingEntryInitializer(binding, true))
-      end
-      AddTextArea(category, "message", "Whisper (right click)",
-        "One sentence per line, a random one is sent; saved when leaving the field.")
-      AddTextArea(category, "altMessage", "Whisper (Alt+right click)",
-        "One sentence per line, a random one is sent; saved when leaving the field.")
-      Settings.SetOnValueChangedCallback(ADDON .. "_perCharacter", RefreshInputs)
-      return
+      return category
     end
   end
+end
+
+-- nameplate time slider showing one decimal; ns.Slider has no label format
+local function AddTimeSlider(category)
+  local key = "plateTime"
+  local setting = Settings.RegisterProxySetting(category, ADDON .. "_" .. key, "number",
+    "Nameplate time", ns.defaults.db[key],
+    function() return ns.Get(key) end,
+    function(value) SaveValue(key, value) end)
+  local options = Settings.CreateSliderOptions(0.1, 3, 0.1)
+  options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
+    return format("%.1f s", value)
+  end)
+  Settings.CreateSlider(category, setting, options,
+    "Seconds a scan shows friendly nameplates before reading them")
+  -- show the value of the new profile after a switch
+  Settings.SetOnValueChangedCallback(ADDON .. "_perCharacter", function()
+    setting:NotifyUpdate()
+  end)
+end
+
+-- add the scan key binding and both whisper fields below the addon's settings controls
+local function AddSettingsFields(category)
+  local binding = C_KeyBindings.GetBindingIndex("WATERMOOCH_SCAN")
+  if binding then
+    Settings.RegisterInitializer(category, CreateKeybindingEntryInitializer(binding, true))
+  end
+  AddTextArea(category, "message", "Whisper (right click)",
+    "One sentence per line, a random one is sent; saved when leaving the field.")
+  AddTextArea(category, "altMessage", "Whisper (Alt+right click)",
+    "One sentence per line, a random one is sent; saved when leaving the field.")
+  Settings.SetOnValueChangedCallback(ADDON .. "_perCharacter", RefreshInputs)
 end
 
 -- event handlers by event name
@@ -336,12 +359,12 @@ ns.Store("WaterMoochDB", {
     end
   end
   ns.Settings()
-  ns.Slider("plateTime", "Nameplate time", 0.1, 3, 0.1,
-    "Seconds a scan shows friendly nameplates before reading them")
+  local category = FindCategory()
+  AddTimeSlider(category)
   local maxLevel = GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion() or 80
   ns.Slider("minLevel", "Minimum level", 1, math.max(maxLevel, 1), 1,
     "Only list mages of this level or higher")
-  AddSettingsFields()
+  AddSettingsFields(category)
 end)
 
 -- chat commands
@@ -352,7 +375,7 @@ ns.Command({
   args = { { name = "seconds", type = "number", min = 0.1, max = 3 } },
   run = function(args)
     ns.Set("plateTime", args.seconds)
-    ns.Status("nameplate time", args.seconds .. " s")
+    ns.Status("nameplate time", format("%.1f s", args.seconds))
   end,
 })
 ns.Command({
@@ -376,7 +399,7 @@ local function MessageCommand(name, key, label, help)
       if options.add and #Lines(key) > 0 then
         text = ns.Get(key) .. "\n" .. text
       end
-      SaveMessage(key, text)
+      SaveValue(key, text)
       ShowSet(label, key)
     end,
   })
