@@ -38,7 +38,7 @@ local L = {
 if GetLocale() == "deDE" then
   local de = {
     BINDING = "WaterMooch: Nach Magiern suchen",
-    WINDOW_TITLE = "Spender in der Nähe",
+    WINDOW_TITLE = "Wasserspender in der Nähe",
     NO_TEXT = "kein Flüstertext gesetzt - siehe %s",
     NONE_FOUND = "keine Magier in der Nähe gefunden",
     FOUND = "%s Magier gefunden",
