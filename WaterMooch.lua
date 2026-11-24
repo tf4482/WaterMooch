@@ -123,6 +123,8 @@ end
 -- fill the rows with the names and show the window, or hide it when empty
 local function Render(names)
   local color = RAID_CLASS_COLORS.MAGE
+  -- centered title clear of the close button on both sides
+  local width = window.TitleText:GetStringWidth() + 64
   for index, row in ipairs(rows) do
     local name = names[index]
     row.name = name
@@ -133,12 +135,14 @@ local function Render(names)
         .. "\n/stopmacro [noexists]\n/tm !" .. SQUARE)
       row:SetText(color:WrapTextInColorCode(name))
       row:Show()
+      -- row insets and label padding around the name
+      width = math.max(width, row:GetFontString():GetStringWidth() + 40)
     else
       row:Hide()
     end
   end
   local shown = math.min(#names, ROWS)
-  window:SetHeight(40 + shown * ROW_HEIGHT)
+  window:SetSize(math.ceil(width), 40 + shown * ROW_HEIGHT)
   window:SetShown(shown > 0)
 end
 
