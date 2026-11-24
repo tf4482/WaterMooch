@@ -12,10 +12,10 @@ local ROW_HEIGHT = 20
 -- label in Options > Keybindings > AddOns
 _G["BINDING_NAME_WATERMOOCH_SCAN"] = "WaterMooch: Scan for mages"
 
--- send the configured whisper to a player
-local function Whisper(name)
+-- send the whisper text saved under key to a player
+local function Whisper(name, key)
   local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
-  send(ns.Get("message"), "WHISPER", nil, name)
+  send(ns.Get(key), "WHISPER", nil, name)
 end
 
 -- list window, movable; position kept by the game's layout cache
@@ -47,12 +47,13 @@ for index = 1, ROWS do
   label:SetPoint("LEFT", row, "LEFT", 4, 0)
   row:SetFontString(label)
   -- once per click: blue square after the left-click target, whisper on right click
+  -- (Alt+right click: second text)
   row:SetScript("PostClick", function(self, button, down)
     if down ~= GetCVarBool("ActionButtonUseKeyDown") or not self.name or InCombatLockdown() then
       return
     end
     if button == "RightButton" then
-      Whisper(self.name)
+      Whisper(self.name, IsAltKeyDown() and "altMessage" or "message")
     elseif button == "LeftButton" and GetUnitName("target", true) == self.name
       and GetRaidTargetIndex("target") ~= SQUARE then
       SetRaidTarget("target", SQUARE)
@@ -128,6 +129,7 @@ end
 -- current state
 local function Status()
   ns.Status("whisper", ns.Get("message"))
+  ns.Status("alt whisper", ns.Get("altMessage"))
   ns.Status("per character", ns.OnOff(ns.char.perCharacter))
   ns.Detail("scan with " .. ns.Color("command", ns.slash .. " scan") .. " or your key binding")
 end
@@ -138,42 +140,57 @@ local function PerCharacter(enabled)
   Status()
 end
 
--- save the whisper text in the active profile; Settings.lua has no text control
-local function SaveMessage(text)
+-- save a whisper text in the active profile; Settings.lua has no text control
+local function SaveMessage(key, text)
   local profile = ns.char.perCharacter and ns.char or ns.db
-  profile.message = text
+  profile[key] = text
 end
 
--- whisper page in Options > AddOns > WaterMooch, with a text field
+-- whisper page in Options > AddOns > WaterMooch, with one text field per whisper
 local panel = CreateFrame("Frame")
 local heading = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 heading:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
 heading:SetText("Whisper")
-local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-hint:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -8)
-hint:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
-hint:SetJustifyH("LEFT")
-hint:SetText("Sent to the mage you right-click in the list; saved on Enter or when leaving the field.")
-local input = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
-input:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 6, -12)
-input:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
-input:SetHeight(24)
-input:SetAutoFocus(false)
-input:SetMaxLetters(255)
--- save the typed text
-input:SetScript("OnEditFocusLost", function(self)
-  SaveMessage(self:GetText())
-end)
-input:SetScript("OnEnterPressed", input.ClearFocus)
--- discard the typing and show the saved text again
-input:SetScript("OnEscapePressed", function(self)
-  self:SetText(ns.Get("message"))
-  self:ClearFocus()
-end)
--- show the text of the active profile whenever the page opens
+-- text fields by setting key, refreshed when the page opens
+local inputs = {}
+
+-- labeled text field below anchor for the whisper saved under key; returns the field
+local function TextField(anchor, key, text)
+  local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  hint:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", anchor == heading and 0 or -6, -16)
+  hint:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
+  hint:SetJustifyH("LEFT")
+  hint:SetText(text)
+  local input = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
+  input:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 6, -8)
+  input:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
+  input:SetHeight(24)
+  input:SetAutoFocus(false)
+  input:SetMaxLetters(255)
+  -- save the typed text
+  input:SetScript("OnEditFocusLost", function(self)
+    SaveMessage(key, self:GetText())
+  end)
+  input:SetScript("OnEnterPressed", input.ClearFocus)
+  -- discard the typing and show the saved text again
+  input:SetScript("OnEscapePressed", function(self)
+    self:SetText(ns.Get(key))
+    self:ClearFocus()
+  end)
+  inputs[key] = input
+  return input
+end
+
+local first = TextField(heading, "message",
+  "Right click on a mage in the list sends this text; saved on Enter or when leaving the field.")
+TextField(first, "altMessage", "Alt+right click sends this text instead.")
+
+-- show the texts of the active profile whenever the page opens
 panel:SetScript("OnShow", function()
-  input:SetText(ns.Get("message"))
-  input:SetCursorPosition(0)
+  for key, input in pairs(inputs) do
+    input:SetText(ns.Get(key))
+    input:SetCursorPosition(0)
+  end
 end)
 
 -- attach the whisper page below the addon's settings page
@@ -207,6 +224,7 @@ end)
 -- saved state; settings page once loaded
 ns.Store("WaterMoochDB", {
   message = "Hi! Could you spare some water, please? Thank you!",
+  altMessage = "Hi! Could you spare some food, please? Thank you!",
 }, function()
   ns.Settings()
   AddWhisperPage()
@@ -219,8 +237,17 @@ ns.Command({
   help = "set the whisper text (use quotes)",
   args = { { name = "text" } },
   run = function(args)
-    SaveMessage(args.text)
+    SaveMessage("message", args.text)
     ns.Status("whisper", args.text)
+  end,
+})
+ns.Command({
+  name = "altmessage",
+  help = "set the Alt+right click whisper text (use quotes)",
+  args = { { name = "text" } },
+  run = function(args)
+    SaveMessage("altMessage", args.text)
+    ns.Status("alt whisper", args.text)
   end,
 })
 ns.Command({
