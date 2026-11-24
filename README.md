@@ -2,18 +2,19 @@
 
 On a slash command or key press, WaterMooch lists the mages around you in a small window;
 a left click targets the mage and marks them with a blue square, a right click whispers
-them your own text.
+them your own text, Alt+right click a second one.
 
 ## Features
 
 - **Scan on demand** - `/wm scan` or your own key binding (Options > Keybindings > AddOns)
   lists the friendly mages nearby (nameplates, group, target, mouseover) in a movable window.
 - **Target and mark** - left-click a name to target the mage and set the blue square marker.
-- **Whisper** - right-click the name to send your whisper; a left click never whispers.
-- **Own whisper text** - type the whisper on the page Options > AddOns > WaterMooch >
-  Whisper, or set it by chat command.
+- **Whisper** - right-click the name to send your whisper, Alt+right-click to send the
+  second one; a left click never whispers.
+- **Own whisper texts** - type both whispers on the page Options > AddOns > WaterMooch >
+  Whisper, or set them by chat command.
 - **Remembered** - settings are saved per account, or per character with one checkbox.
-- **Settings page** - the per-character switch and the whisper text in the game menu
+- **Settings page** - the per-character switch and the whisper texts in the game menu
   under Options > AddOns, also opened from the addon compartment menu.
 - **Chat commands** - every option can also be changed by slash command.
 
@@ -29,13 +30,14 @@ without hovering or targeting them.
 ## Usage
 
 ```text
-/wm                     show the current state
-/wm scan                list the mages nearby
-/wm message "<text>"    set the whisper text
-/wm character on        use settings for this character only
-/wm character off       use the account settings again
-/wm config              open the settings page
-/wm help                list all commands
+/wm                      show the current state
+/wm scan                 list the mages nearby
+/wm message "<text>"     set the whisper text
+/wm altmessage "<text>"  set the Alt+right click whisper text
+/wm character on         use settings for this character only
+/wm character off        use the account settings again
+/wm config               open the settings page
+/wm help                 list all commands
 ```
 
 ## Examples
@@ -43,6 +45,7 @@ without hovering or targeting them.
 - In a city, type `/wm scan`; mages near you show up in the window; left-click one, then right-click to ask.
 - Bind a key under Options > Keybindings > AddOns > "WaterMooch: Scan for mages" and press
   it whenever you need water.
+- Ask for food with Alt+right click: `/wm altmessage "Some mage food, please?"`
 - Change the request: `/wm message "Hey, could you open a portal to Stormwind? Tip ready!"`
 - Put `/wm scan` in a macro to scan from an action bar button.
 
