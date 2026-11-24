@@ -24,6 +24,7 @@ them your own text, Alt+right click a second one.
   texts in the game menu under Options > AddOns, also opened from the addon compartment
   menu.
 - **Chat commands** - every option can also be changed by slash command.
+- **German** - German clients get German texts and default whispers; English otherwise.
 
 A scan switches friendly player nameplates on for a moment (0.5 seconds by default,
 adjustable from 0.01 to 3 seconds by slider or number field) when they are off, so mages
