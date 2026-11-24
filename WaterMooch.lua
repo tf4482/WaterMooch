@@ -10,12 +10,10 @@ local ROWS = 10
 local ROW_HEIGHT = 20
 -- seconds a mage seen in passing still counts as nearby
 local RECENT = 60
--- seconds to wait for nameplates after switching them on
-local PLATE_DELAY = 0.5
 -- former default of the Alt+right click whisper, replaced on load
 local OLD_ALT_MESSAGE = "Hi! Could you spare some food, please? Thank you!"
 
--- last time each mage was seen, by unit name
+-- last sighting of each mage by unit name: { time, level }
 local seen = {}
 
 -- label in Options > Keybindings > AddOns
@@ -91,7 +89,9 @@ local function See(unit)
   local _, class = UnitClass(unit)
   local name = GetUnitName(unit, true)
   if class == "MAGE" and name then
-    seen[name] = GetTime()
+    -- -1 means far above the player's level
+    local level = UnitLevel(unit)
+    seen[name] = { time = GetTime(), level = level < 0 and math.huge or level }
   end
 end
 
@@ -164,12 +164,12 @@ local function Collect()
   end
   See("target")
   See("mouseover")
-  -- everyone seen now or within the last RECENT seconds
+  -- everyone seen now or within the last RECENT seconds, from the minimum level up
   local names, now = {}, GetTime()
-  for name, time in pairs(seen) do
-    if now - time > RECENT then
+  for name, sighting in pairs(seen) do
+    if now - sighting.time > RECENT then
       seen[name] = nil
-    else
+    elseif sighting.level >= ns.Get("minLevel") then
       names[#names + 1] = name
     end
   end
@@ -192,7 +192,7 @@ local function Scan()
   if ShowPlates() then
     -- nameplates appear over the next frames
     scanning = true
-    C_Timer.After(PLATE_DELAY, Collect)
+    C_Timer.After(ns.Get("plateTime"), Collect)
   else
     Collect()
   end
@@ -210,6 +210,8 @@ end
 local function Status()
   ShowSet("whisper (right click)", "message")
   ShowSet("alt whisper (Alt+right click)", "altMessage")
+  ns.Status("nameplate time", ns.Get("plateTime") .. " s")
+  ns.Status("minimum level", ns.Get("minLevel"))
   ns.Status("per character", ns.OnOff(ns.char.perCharacter))
   ns.Detail("scan with " .. ns.Color("command", ns.slash .. " scan") .. " or your key binding")
 end
@@ -324,6 +326,8 @@ end)
 ns.Store("WaterMoochDB", {
   message = "Hi! Could you spare some water, please? Thank you!",
   altMessage = "Thank you so much for the water, have a great day!",
+  plateTime = 0.5,
+  minLevel = 1,
 }, function(db)
   -- replace the former default, keep texts the player wrote
   for _, profile in ipairs({ db, ns.char }) do
@@ -332,11 +336,34 @@ ns.Store("WaterMoochDB", {
     end
   end
   ns.Settings()
+  ns.Slider("plateTime", "Nameplate time", 0.1, 3, 0.1,
+    "Seconds a scan shows friendly nameplates before reading them")
+  local maxLevel = GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion() or 80
+  ns.Slider("minLevel", "Minimum level", 1, math.max(maxLevel, 1), 1,
+    "Only list mages of this level or higher")
   AddSettingsFields()
 end)
 
 -- chat commands
 ns.Command({ name = "scan", help = "list the mages nearby", run = Scan })
+ns.Command({
+  name = "time",
+  help = "seconds a scan shows friendly nameplates",
+  args = { { name = "seconds", type = "number", min = 0.1, max = 3 } },
+  run = function(args)
+    ns.Set("plateTime", args.seconds)
+    ns.Status("nameplate time", args.seconds .. " s")
+  end,
+})
+ns.Command({
+  name = "minlevel",
+  help = "only list mages of this level or higher",
+  args = { { name = "level", type = "number", min = 1 } },
+  run = function(args)
+    ns.Set("minLevel", math.floor(args.level))
+    ns.Status("minimum level", math.floor(args.level))
+  end,
+})
 -- chat command that replaces a whisper set or adds a sentence to it
 local function MessageCommand(name, key, label, help)
   ns.Command({
