@@ -6,8 +6,11 @@ them your own text, Alt+right click a second one.
 
 ## Features
 
-- **Scan on demand** - `/wm scan` or your own key binding (Options > Keybindings > AddOns)
-  lists the friendly mages nearby (nameplates, group, target, mouseover) in a movable window.
+- **Scan on demand** - `/wm scan` or your own key binding lists the friendly mages nearby
+  (nameplates, group, target, mouseover, and mages seen in the last minute) in a movable
+  window.
+- **Key binding** - set the scan key on the addon's settings page or under Options >
+  Keybindings > AddOns.
 - **Target and mark** - left-click a name to target the mage and set the blue square marker.
 - **Whisper** - right-click the name to send your whisper, Alt+right-click to send the
   second one; a left click never whispers.
@@ -16,8 +19,8 @@ them your own text, Alt+right click a second one.
 - **Random sentences** - give each whisper several sentences, one per line; a random one
   is sent each time.
 - **Remembered** - settings are saved per account, or per character with one checkbox.
-- **Settings page** - the per-character switch and the whisper texts in the game menu
-  under Options > AddOns, also opened from the addon compartment menu.
+- **Settings page** - the per-character switch, the scan key, and the whisper texts in the
+  game menu under Options > AddOns, also opened from the addon compartment menu.
 - **Chat commands** - every option can also be changed by slash command.
 
 Turn on friendly player nameplates (default key `Shift+V`) so mages nearby are found
