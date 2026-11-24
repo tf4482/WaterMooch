@@ -1,0 +1,19 @@
+## Interface: 16001
+## Title: WaterMooch
+## Notes: Lists nearby mages; left-click to target and mark, right-click to whisper
+## Notes-deDE: Listet Magier in der Nähe; Linksklick visiert an und markiert, Rechtsklick flüstert
+## Author: tf4482
+## Version: @project-version@
+## IconTexture: Interface/Icons/INV_Drink_18
+## SavedVariables: WaterMoochDB
+## SavedVariablesPerCharacter: WaterMoochCharDB
+## X-Curse-Project-ID: 1827454
+
+Output.lua
+Store.lua
+Combat.lua
+Settings.lua
+Slash.lua
+Locale.lua
+WaterMooch.xml
+WaterMooch.lua
