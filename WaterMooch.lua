@@ -69,17 +69,11 @@ for index = 1, ROWS do
   local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   label:SetPoint("LEFT", row, "LEFT", 4, 0)
   row:SetFontString(label)
-  -- once per click: blue square after the left-click target, whisper on right click
-  -- (Alt+right click: second text)
+  -- once per right click: whisper (Alt+right click: second text)
   row:SetScript("PostClick", function(self, button, down)
-    if down ~= GetCVarBool("ActionButtonUseKeyDown") or not self.name or InCombatLockdown() then
-      return
-    end
-    if button == "RightButton" then
+    if button == "RightButton" and down == GetCVarBool("ActionButtonUseKeyDown") and self.name
+      and not InCombatLockdown() then
       Whisper(self.name, IsAltKeyDown() and "altMessage" or "message")
-    elseif button == "LeftButton" and GetUnitName("target", true) == self.name
-      and GetRaidTargetIndex("target") ~= SQUARE then
-      SetRaidTarget("target", SQUARE)
     end
   end)
   row:Hide()
@@ -106,7 +100,10 @@ local function Render(names)
     local name = names[index]
     row.name = name
     if name then
-      row:SetAttribute("macrotext", "/targetexact " .. name)
+      -- SetRaidTarget is protected: mark in the secure macro, never toggle an existing
+      -- square, and stop when the mage could not be targeted
+      row:SetAttribute("macrotext", "/cleartarget\n/targetexact " .. name
+        .. "\n/stopmacro [noexists]\n/tm !" .. SQUARE)
       row:SetText(color:WrapTextInColorCode(name))
       row:Show()
     else
