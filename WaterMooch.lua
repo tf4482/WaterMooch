@@ -1,4 +1,4 @@
--- WaterMooch: lists nearby mages out of combat; a click targets, marks, and whispers one
+-- WaterMooch: lists nearby mages; a click targets, marks, and whispers one
 
 local _, ns = ...
 
@@ -165,13 +165,9 @@ local function Refresh()
   ns.AfterCombat(Apply)
 end
 
--- current state, with hints when it does not take effect yet
+-- current state
 local function Status()
-  local hint = ""
-  if ns.Get("enabled") and InCombatLockdown() then
-    hint = ns.Color("warning", " (paused in combat)")
-  end
-  ns.Print(ns.OnOff(ns.Get("enabled")) .. hint)
+  ns.Print(ns.OnOff(ns.Get("enabled")))
   ns.Status("whisper", ns.Get("message"))
   ns.Status("per character", ns.OnOff(ns.char.perCharacter))
 end
@@ -247,7 +243,7 @@ ns.Store("WaterMoochDB", {
   message = "Hi! Could you spare some water, please? Thank you!",
 }, function()
   ns.Settings()
-  ns.Checkbox("enabled", "Enabled", "List nearby mages out of combat", Refresh)
+  ns.Checkbox("enabled", "Enabled", "List nearby mages", Refresh)
   Refresh()
 end)
 

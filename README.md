@@ -1,12 +1,12 @@
 # WaterMooch
 
-Out of combat, WaterMooch lists the mages around you in a small window; one click targets
+WaterMooch lists the mages around you in a small window; one click targets
 the mage, marks them with a blue square, and whispers them your own text.
 
 ## Features
 
 - **Mage list** - friendly mages nearby (nameplates, group, target, mouseover) appear in a
-  movable window, only out of combat; mages unseen for 60 seconds drop off the list.
+  movable window; mages unseen for 60 seconds drop off the list.
 - **One-click request** - clicking a name targets the mage, sets the blue square marker,
   and sends your whisper.
 - **Own whisper text** - the whisper is freely configurable by chat command.
@@ -44,7 +44,6 @@ without hovering or targeting them.
 - Turn it on once: `/wm on`. In a city, mages near you show up in the window; click one.
 - Change the request: `/wm message "Hey, could you open a portal to Stormwind? Tip ready!"`
 - Closed the window by mistake: `/wm show`.
-- A fight starts: the window hides and comes back with a fresh list after combat.
 
 ## Develop
 

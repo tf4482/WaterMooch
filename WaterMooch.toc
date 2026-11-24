@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: WaterMooch
-## Notes: Lists nearby mages out of combat; click one to target, mark, and whisper them
+## Notes: Lists nearby mages; click one to target, mark, and whisper them
 ## Author: tf4482
 ## Version: @project-version@
 ## IconTexture: Interface/Icons/INV_Drink_18
