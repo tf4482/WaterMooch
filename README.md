@@ -13,6 +13,8 @@ them your own text, Alt+right click a second one.
   second one; a left click never whispers.
 - **Own whisper texts** - type both whispers on the page Options > AddOns > WaterMooch >
   Whisper, or set them by chat command.
+- **Random sentences** - give each whisper several sentences, one per line; a random one
+  is sent each time.
 - **Remembered** - settings are saved per account, or per character with one checkbox.
 - **Settings page** - the per-character switch and the whisper texts in the game menu
   under Options > AddOns, also opened from the addon compartment menu.
@@ -32,8 +34,8 @@ without hovering or targeting them.
 ```text
 /wm                      show the current state
 /wm scan                 list the mages nearby
-/wm message "<text>"     set the whisper text
-/wm altmessage "<text>"  set the Alt+right click whisper text
+/wm message "<text>"     set the right click whisper (add --add for one more sentence)
+/wm altmessage "<text>"  set the Alt+right click whisper (also with --add)
 /wm character on         use settings for this character only
 /wm character off        use the account settings again
 /wm config               open the settings page
@@ -46,6 +48,7 @@ without hovering or targeting them.
 - Bind a key under Options > Keybindings > AddOns > "WaterMooch: Scan for mages" and press
   it whenever you need water.
 - Ask for food with Alt+right click: `/wm altmessage "Some mage food, please?"`
+- One more random choice: `/wm message "Got any water to spare?" --add`
 - Change the request: `/wm message "Hey, could you open a portal to Stormwind? Tip ready!"`
 - Put `/wm scan` in a macro to scan from an action bar button.
 
