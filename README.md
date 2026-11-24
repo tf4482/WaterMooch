@@ -9,10 +9,11 @@ one click targets the mage, marks them with a blue square, and whispers them you
   lists the friendly mages nearby (nameplates, group, target, mouseover) in a movable window.
 - **One-click request** - clicking a name targets the mage, sets the blue square marker,
   and sends your whisper.
-- **Own whisper text** - the whisper is freely configurable by chat command.
+- **Own whisper text** - type the whisper on the page Options > AddOns > WaterMooch >
+  Whisper, or set it by chat command.
 - **Remembered** - settings are saved per account, or per character with one checkbox.
-- **Settings page** - the per-character switch in the game menu under Options > AddOns,
-  also opened from the addon compartment menu.
+- **Settings page** - the per-character switch and the whisper text in the game menu
+  under Options > AddOns, also opened from the addon compartment menu.
 - **Chat commands** - every option can also be changed by slash command.
 
 Turn on friendly player nameplates (default key `Shift+V`) so mages nearby are found
