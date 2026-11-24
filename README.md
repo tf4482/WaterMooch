@@ -11,8 +11,8 @@ them your own text, Alt+right click a second one.
 - **Target and mark** - left-click a name to target the mage and set the blue square marker.
 - **Whisper** - right-click the name to send your whisper, Alt+right-click to send the
   second one; a left click never whispers.
-- **Own whisper texts** - type both whispers on the page Options > AddOns > WaterMooch >
-  Whisper, or set them by chat command.
+- **Own whisper texts** - type both whispers on the settings page Options > AddOns >
+  WaterMooch, or set them by chat command.
 - **Random sentences** - give each whisper several sentences, one per line; a random one
   is sent each time.
 - **Remembered** - settings are saved per account, or per character with one checkbox.

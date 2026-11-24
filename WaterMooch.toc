@@ -12,4 +12,5 @@ Store.lua
 Combat.lua
 Settings.lua
 Slash.lua
+WaterMooch.xml
 WaterMooch.lua
