@@ -153,8 +153,9 @@ local function Render(names)
   window:SetShown(shown > 0)
 end
 
--- nameplate settings switched on for a scan, with the player's values to restore
-local switched = {}
+-- nameplate settings switched on for a scan, with the player's values to restore;
+-- saved per character so a disconnect or crash still restores them on the next login
+ns.Store("WaterMoochCharDB", { switched = {} }, nil, "char")
 -- a scan is waiting for nameplates to appear
 local scanning = false
 
@@ -163,6 +164,7 @@ local function ShowPlates()
   -- 12.x name first, older clients second; nameplateShowAll shows plates out of combat
   local friendly = C_CVar.GetCVar("nameplateShowFriendlyPlayers") and "nameplateShowFriendlyPlayers"
     or "nameplateShowFriends"
+  local switched = ns.char.switched
   for _, cvar in ipairs({ "nameplateShowAll", friendly }) do
     local value = C_CVar.GetCVar(cvar)
     if value and value ~= "1" then
@@ -175,6 +177,7 @@ end
 
 -- put the player's nameplate settings back; only out of combat
 local function RestorePlates()
+  local switched = ns.char.switched
   for cvar, value in pairs(switched) do
     C_CVar.SetCVar(cvar, value)
     switched[cvar] = nil
@@ -396,9 +399,17 @@ function events.PLAYER_TARGET_CHANGED()
   See("target")
 end
 
--- logout or reload during a scan: keep the player's nameplate settings
+-- nameplate settings still switched from a lost session: restore them out of combat
+function events.PLAYER_LOGIN()
+  if next(ns.char.switched) then
+    ns.AfterCombat(RestorePlates)
+  end
+end
+
+-- logout or reload during a scan: keep the player's nameplate settings; in combat they
+-- stay saved for the next login
 function events.PLAYER_LOGOUT()
-  RestorePlates()
+  ns.AfterCombat(RestorePlates)
 end
 
 -- secure rows cannot be hidden later: close the window now
@@ -483,4 +494,4 @@ ns.Command({
   run = function(args) PerCharacter(args.state == "on") end,
 })
 ns.Command({ name = "config", help = L.HELP_CONFIG, run = ns.OpenSettings })
-ns.Slash({ "/wm", "/watermooch" }, Status)
+ns.Slash({ "/wmooch", "/watermooch" }, Status)

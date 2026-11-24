@@ -6,7 +6,7 @@ them your own text, Alt+right click a second one.
 
 ## Features
 
-- **Scan on demand** - `/wm scan` or your own key binding lists the friendly mages nearby
+- **Scan on demand** - `/wmooch scan` or your own key binding lists the friendly mages nearby
   (nameplates, group, target, mouseover, and mages seen in the last minute) in a movable
   window, each with level and <guild>.
 - **Minimum level** - list only mages from a chosen level up (slider or chat command).
@@ -30,6 +30,7 @@ them your own text, Alt+right click a second one.
 A scan switches friendly player nameplates on for a moment (0.5 seconds by default,
 adjustable from 0.01 to 3 seconds by slider or number field) when they are off, so mages
 nearby are found without hovering or targeting them; your setting is restored right after.
+After a disconnect or crash during a scan, it is restored on your next login.
 
 ## Screenshots
 
@@ -46,29 +47,29 @@ nearby are found without hovering or targeting them; your setting is restored ri
 ## Usage
 
 ```text
-/wm                      show the current state
-/wm scan                 list the mages nearby
-/wm time <seconds>       how long a scan shows nameplates (0.01 to 3)
-/wm minlevel <level>     only list mages of this level or higher
-/wm message "<text>"     set the right click whisper (add --add for one more sentence)
-/wm altmessage "<text>"  set the Alt+right click whisper (also with --add)
-/wm character on         use settings for this character only
-/wm character off        use the account settings again
-/wm config               open the settings page
-/wm help                 list all commands
+/wmooch                      show the current state
+/wmooch scan                 list the mages nearby
+/wmooch time <seconds>       how long a scan shows nameplates (0.01 to 3)
+/wmooch minlevel <level>     only list mages of this level or higher
+/wmooch message "<text>"     set the right click whisper (add --add for one more sentence)
+/wmooch altmessage "<text>"  set the Alt+right click whisper (also with --add)
+/wmooch character on         use settings for this character only
+/wmooch character off        use the account settings again
+/wmooch config               open the settings page
+/wmooch help                 list all commands
 ```
 
 ## Examples
 
-- In a city, type `/wm scan`; mages near you show up in the window; left-click one, then right-click to ask.
+- In a city, type `/wmooch scan`; mages near you show up in the window; left-click one, then right-click to ask.
 - Bind a key under Options > Keybindings > AddOns > "WaterMooch: Scan for mages" and press
   it whenever you need water.
-- Only mages who can conjure good water: `/wm minlevel 70`
-- Busy city, some mages missing: `/wm time 1.5`
-- Ask for food with Alt+right click: `/wm altmessage "Some mage food, please?"`
-- One more random choice: `/wm message "Got any water to spare?" --add`
-- Change the request: `/wm message "Hey, could you open a portal to Stormwind? Tip ready!"`
-- Put `/wm scan` in a macro to scan from an action bar button.
+- Only mages who can conjure good water: `/wmooch minlevel 70`
+- Busy city, some mages missing: `/wmooch time 1.5`
+- Ask for food with Alt+right click: `/wmooch altmessage "Some mage food, please?"`
+- One more random choice: `/wmooch message "Got any water to spare?" --add`
+- Change the request: `/wmooch message "Hey, could you open a portal to Stormwind? Tip ready!"`
+- Put `/wmooch scan` in a macro to scan from an action bar button.
 
 ## Develop
 
