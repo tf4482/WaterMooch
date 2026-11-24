@@ -15,6 +15,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - Nameplate time from 0.01 seconds, with a number field next to the slider
 - German localization for German clients, English for all others
 - Level and <guild> after each name in the list
+- Alt+left click on a name targets the mage and opens a trade
 - Left click on a name targets the mage and sets the blue square marker
 - Right click on a name whispers the mage, Alt+right click sends a second text
 - Configurable whisper texts on the settings page and by `/wm message`, `/wm altmessage`
