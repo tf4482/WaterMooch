@@ -9,6 +9,7 @@ them your own text, Alt+right click a second one.
 - **Scan on demand** - `/wm scan` or your own key binding lists the friendly mages nearby
   (nameplates, group, target, mouseover, and mages seen in the last minute) in a movable
   window.
+- **Minimum level** - list only mages from a chosen level up (slider or chat command).
 - **Key binding** - set the scan key on the addon's settings page or under Options >
   Keybindings > AddOns.
 - **Target and mark** - left-click a name to target the mage and set the blue square marker.
@@ -19,13 +20,14 @@ them your own text, Alt+right click a second one.
 - **Random sentences** - give each whisper several sentences, one per line; a random one
   is sent each time.
 - **Remembered** - settings are saved per account, or per character with one checkbox.
-- **Settings page** - the per-character switch, the scan key, and the whisper texts in the
-  game menu under Options > AddOns, also opened from the addon compartment menu.
+- **Settings page** - the per-character switch, both sliders, the scan key, and the whisper
+  texts in the game menu under Options > AddOns, also opened from the addon compartment
+  menu.
 - **Chat commands** - every option can also be changed by slash command.
 
-A scan switches friendly player nameplates on for half a second when they are off, so
-mages nearby are found without hovering or targeting them; your setting is restored
-right after.
+A scan switches friendly player nameplates on for a moment (0.5 seconds by default,
+adjustable by slider) when they are off, so mages nearby are found without hovering or
+targeting them; your setting is restored right after.
 
 ## Install
 
@@ -38,6 +40,8 @@ right after.
 ```text
 /wm                      show the current state
 /wm scan                 list the mages nearby
+/wm time <seconds>       how long a scan shows nameplates (0.1 to 3)
+/wm minlevel <level>     only list mages of this level or higher
 /wm message "<text>"     set the right click whisper (add --add for one more sentence)
 /wm altmessage "<text>"  set the Alt+right click whisper (also with --add)
 /wm character on         use settings for this character only
@@ -51,6 +55,8 @@ right after.
 - In a city, type `/wm scan`; mages near you show up in the window; left-click one, then right-click to ask.
 - Bind a key under Options > Keybindings > AddOns > "WaterMooch: Scan for mages" and press
   it whenever you need water.
+- Only mages who can conjure good water: `/wm minlevel 70`
+- Busy city, some mages missing: `/wm time 1.5`
 - Ask for food with Alt+right click: `/wm altmessage "Some mage food, please?"`
 - One more random choice: `/wm message "Got any water to spare?" --add`
 - Change the request: `/wm message "Hey, could you open a portal to Stormwind? Tip ready!"`
