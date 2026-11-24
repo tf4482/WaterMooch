@@ -1,0 +1,15 @@
+## Interface: 16001, 120105
+## Title: WaterMooch
+## Notes: Lists nearby mages out of combat; click one to target, mark, and whisper them
+## Author: tf4482
+## Version: @project-version@
+## IconTexture: Interface/Icons/INV_Drink_18
+## SavedVariables: WaterMoochDB
+## SavedVariablesPerCharacter: WaterMoochCharDB
+
+Output.lua
+Store.lua
+Combat.lua
+Settings.lua
+Slash.lua
+WaterMooch.lua
