@@ -170,60 +170,54 @@ local function SaveMessage(key, text)
   profile[key] = text
 end
 
--- whisper page in Options > AddOns > WaterMooch, with one text field per whisper
-local panel = CreateFrame("Frame")
-local heading = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-heading:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
-heading:SetText("Whisper")
--- text fields by setting key, refreshed when the page opens
+-- text fields shown on the settings page, by setting key
 local inputs = {}
 
--- labeled multi-line field below anchor for the whisper set saved under key
-local function TextField(anchor, key, text)
-  local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-  hint:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", anchor == heading and 0 or -6, -16)
-  hint:SetPoint("RIGHT", panel, "RIGHT", -24, 0)
-  hint:SetJustifyH("LEFT")
-  hint:SetText(text)
-  local scroll = CreateFrame("ScrollFrame", nil, panel, "InputScrollFrameTemplate")
-  scroll:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 6, -8)
-  scroll:SetSize(520, 90)
-  scroll.CharCount:Hide()
-  local input = scroll.EditBox
-  input:SetWidth(520 - 18)
-  input:SetFontObject("ChatFontNormal")
-  -- save the typed lines
-  input:SetScript("OnEditFocusLost", function(self)
-    SaveMessage(key, self:GetText())
-  end)
-  -- discard the typing and show the saved lines again
-  input:SetScript("OnEscapePressed", function(self)
-    self:SetText(ns.Get(key))
-    self:ClearFocus()
-  end)
-  inputs[key] = input
-  return scroll
+-- show the texts of the active profile in the visible fields
+local function RefreshInputs()
+  for key, input in pairs(inputs) do
+    if input:IsVisible() then
+      input:SetText(ns.Get(key))
+      input:SetCursorPosition(0)
+    end
+  end
 end
 
-local first = TextField(heading, "message",
-  "Right click on a mage in the list sends one of these lines at random. One sentence per "
-  .. "line; saved when leaving the field.")
-TextField(first, "altMessage", "Alt+right click sends one of these lines at random instead.")
-
--- show the texts of the active profile whenever the page opens
-panel:SetScript("OnShow", function()
-  for key, input in pairs(inputs) do
+-- multi-line field on the addon's settings page for the whisper set saved under key
+local function AddTextArea(category, key, label, hint)
+  local initializer = Settings.CreateElementInitializer("WaterMoochTextAreaTemplate", { name = label })
+  -- fill a list frame from the template whenever the page shows it
+  initializer.InitFrame = function(_, frame)
+    frame.Label:SetText(label)
+    frame.Hint:SetText(hint)
+    local input = frame.Input.EditBox
+    input:SetFontObject("ChatFontNormal")
     input:SetText(ns.Get(key))
     input:SetCursorPosition(0)
+    -- save the typed lines
+    input:SetScript("OnEditFocusLost", function(self)
+      SaveMessage(key, self:GetText())
+    end)
+    -- discard the typing and show the saved lines again
+    input:SetScript("OnEscapePressed", function(self)
+      self:SetText(ns.Get(key))
+      self:ClearFocus()
+    end)
+    inputs[key] = input
   end
-end)
+  Settings.RegisterInitializer(category, initializer)
+end
 
--- attach the whisper page below the addon's settings page
-local function AddWhisperPage()
+-- add both whisper fields below the controls of the addon's settings page
+local function AddWhisperFields()
   local title = C_AddOns.GetAddOnMetadata(ADDON, "Title") or ADDON
   for _, category in ipairs(SettingsPanel:GetAllCategories()) do
     if category:GetName() == title then
-      Settings.RegisterCanvasLayoutSubcategory(category, panel, "Whisper")
+      AddTextArea(category, "message", "Whisper (right click)",
+        "One sentence per line, a random one is sent; saved when leaving the field.")
+      AddTextArea(category, "altMessage", "Whisper (Alt+right click)",
+        "One sentence per line, a random one is sent; saved when leaving the field.")
+      Settings.SetOnValueChangedCallback(ADDON .. "_perCharacter", RefreshInputs)
       return
     end
   end
@@ -252,7 +246,7 @@ ns.Store("WaterMoochDB", {
   altMessage = "Hi! Could you spare some food, please? Thank you!",
 }, function()
   ns.Settings()
-  AddWhisperPage()
+  AddWhisperFields()
 end)
 
 -- chat commands
