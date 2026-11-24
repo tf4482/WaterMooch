@@ -75,7 +75,7 @@ window:RegisterForDrag("LeftButton")
 window:SetScript("OnDragStart", window.StartMoving)
 window:SetScript("OnDragStop", window.StopMovingOrSizing)
 window:Hide()
-window.TitleText:SetText("Mages nearby")
+window.TitleText:SetText("Dispenser nearby")
 
 -- secure row buttons: left click targets and marks, right click whispers
 local rows = {}
