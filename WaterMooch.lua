@@ -1,29 +1,16 @@
--- WaterMooch: lists nearby mages; a click targets, marks, and whispers one
+-- WaterMooch: lists nearby mages on demand; a click targets, marks, and whispers one
 
 local _, ns = ...
 
 -- raid target icon index of the blue square
 local SQUARE = 6
--- seconds a mage stays listed after last being seen
-local TIMEOUT = 60
--- seconds between full scans
-local INTERVAL = 5
 -- most rows the window shows
 local ROWS = 10
 -- row height in pixels
 local ROW_HEIGHT = 20
 
--- last time each mage was seen, by unit name
-local mages = {}
--- periodic scan while the feature is on
-local ticker
--- window closed by the player until a new mage shows up
-local dismissed = false
-
--- whether the feature should act now: on and out of combat
-local function Active()
-  return ns.db ~= nil and ns.Get("enabled") and not InCombatLockdown()
-end
+-- label in Options > Keybindings > AddOns
+_G["BINDING_NAME_WATERMOOCH_SCAN"] = "WaterMooch: Scan for mages"
 
 -- send the configured whisper to a player
 local function Whisper(name)
@@ -43,10 +30,6 @@ window:SetScript("OnDragStart", window.StartMoving)
 window:SetScript("OnDragStop", window.StopMovingOrSizing)
 window:Hide()
 window.TitleText:SetText("Mages nearby")
--- close button: keep the window hidden until a new mage appears
-window.CloseButton:HookScript("OnClick", function()
-  dismissed = true
-end)
 
 -- secure row buttons: the macro targets, PostClick marks and whispers
 local rows = {}
@@ -76,8 +59,8 @@ for index = 1, ROWS do
   rows[index] = row
 end
 
--- remember a unit if it is a visible, friendly mage other than the player
-local function See(unit)
+-- add a unit's name if it is a visible, friendly mage other than the player
+local function See(unit, found)
   if not UnitExists(unit) or not UnitIsPlayer(unit) or UnitIsUnit(unit, "player")
     or not UnitIsVisible(unit) or not UnitIsFriend("player", unit) then
     return
@@ -85,23 +68,12 @@ local function See(unit)
   local _, class = UnitClass(unit)
   local name = GetUnitName(unit, true)
   if class == "MAGE" and name then
-    if not mages[name] then
-      dismissed = false
-    end
-    mages[name] = GetTime()
+    found[name] = true
   end
 end
 
--- fill the rows with the listed mages and show or hide the window; out of combat only
-local function Render()
-  if InCombatLockdown() then
-    return
-  end
-  local names = {}
-  for name in pairs(mages) do
-    names[#names + 1] = name
-  end
-  table.sort(names)
+-- fill the rows with the names and show the window, or hide it when empty
+local function Render(names)
   local color = RAID_CLASS_COLORS.MAGE
   for index, row in ipairs(rows) do
     local name = names[index]
@@ -116,66 +88,45 @@ local function Render()
   end
   local shown = math.min(#names, ROWS)
   window:SetHeight(40 + shown * ROW_HEIGHT)
-  window:SetShown(Active() and shown > 0 and not dismissed)
+  window:SetShown(shown > 0)
 end
 
--- scan nameplates, group, target, and mouseover; drop mages not seen for a while
+-- one scan of nameplates, group, target, and mouseover; shows the result
 local function Scan()
-  if not Active() then
-    return
+  if InCombatLockdown() then
+    return ns.Error("scanning is not available right now")
   end
+  local found = {}
   for index = 1, 40 do
-    See("nameplate" .. index)
+    See("nameplate" .. index, found)
   end
   local group, size = "party", 4
   if IsInRaid() then
     group, size = "raid", 40
   end
   for index = 1, size do
-    See(group .. index)
+    See(group .. index, found)
   end
-  See("target")
-  See("mouseover")
-  local now = GetTime()
-  for name, seen in pairs(mages) do
-    if now - seen > TIMEOUT then
-      mages[name] = nil
-    end
+  See("target", found)
+  See("mouseover", found)
+  local names = {}
+  for name in pairs(found) do
+    names[#names + 1] = name
   end
-  Render()
-end
-
--- start or stop scanning to match the setting; only called out of combat
-local function Apply()
-  if ns.Get("enabled") then
-    ticker = ticker or C_Timer.NewTicker(INTERVAL, Scan)
-    Scan()
+  table.sort(names)
+  Render(names)
+  if #names == 0 then
+    ns.Warn("no mages found nearby")
   else
-    if ticker then
-      ticker:Cancel()
-      ticker = nil
-    end
-    wipe(mages)
-    Render()
+    ns.Print(ns.Color("value", #names) .. " mage(s) found")
   end
-end
-
--- apply now, or right after combat
-local function Refresh()
-  ns.AfterCombat(Apply)
 end
 
 -- current state
 local function Status()
-  ns.Print(ns.OnOff(ns.Get("enabled")))
   ns.Status("whisper", ns.Get("message"))
   ns.Status("per character", ns.OnOff(ns.char.perCharacter))
-end
-
--- switch the feature and report the new state
-local function Switch(enabled)
-  ns.Set("enabled", enabled)
-  Status()
+  ns.Detail("scan with " .. ns.Color("command", ns.slash .. " scan") .. " or your key binding")
 end
 
 -- switch per-character settings and report the new state
@@ -194,38 +145,9 @@ end
 -- event handlers by event name
 local events = {}
 
--- combat starts: hide the window while that is still allowed
+-- secure rows cannot be hidden later: close the window now
 function events.PLAYER_REGEN_DISABLED()
   window:Hide()
-end
-
--- combat ends: scan and show the list again
-function events.PLAYER_REGEN_ENABLED()
-  Scan()
-end
-
--- a nameplate appeared: check it right away
-function events.NAME_PLATE_UNIT_ADDED(unit)
-  if Active() then
-    See(unit)
-    Render()
-  end
-end
-
--- mouse over a unit: check it right away
-function events.UPDATE_MOUSEOVER_UNIT()
-  if Active() then
-    See("mouseover")
-    Render()
-  end
-end
-
--- new target: check it right away
-function events.PLAYER_TARGET_CHANGED()
-  if Active() then
-    See("target")
-    Render()
-  end
 end
 
 -- one frame dispatching all events above
@@ -237,32 +159,20 @@ frame:SetScript("OnEvent", function(_, event, ...)
   events[event](...)
 end)
 
--- saved state; settings page and first apply once loaded
+-- saved state; settings page once loaded
 ns.Store("WaterMoochDB", {
-  enabled = false,
   message = "Hi! Could you spare some water, please? Thank you!",
 }, function()
   ns.Settings()
-  ns.Checkbox("enabled", "Enabled", "List nearby mages", Refresh)
-  Refresh()
 end)
 
 -- chat commands
-ns.Command({ name = "on", help = "start listing nearby mages", run = function() Switch(true) end })
-ns.Command({ name = "off", help = "stop listing nearby mages", run = function() Switch(false) end })
+ns.Command({ name = "scan", help = "list the mages nearby", run = Scan })
 ns.Command({
   name = "message",
   help = "set the whisper text (use quotes)",
   args = { { name = "text" } },
   run = function(args) SetMessage(args.text) end,
-})
-ns.Command({
-  name = "show",
-  help = "show the mage window again after closing it",
-  run = function()
-    dismissed = false
-    Refresh()
-  end,
 })
 ns.Command({
   name = "character",
