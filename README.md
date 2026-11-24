@@ -1,19 +1,18 @@
 # WaterMooch
 
-WaterMooch lists the mages around you in a small window; one click targets
-the mage, marks them with a blue square, and whispers them your own text.
+On a slash command or key press, WaterMooch lists the mages around you in a small window;
+one click targets the mage, marks them with a blue square, and whispers them your own text.
 
 ## Features
 
-- **Mage list** - friendly mages nearby (nameplates, group, target, mouseover) appear in a
-  movable window; mages unseen for 60 seconds drop off the list.
+- **Scan on demand** - `/wm scan` or your own key binding (Options > Keybindings > AddOns)
+  lists the friendly mages nearby (nameplates, group, target, mouseover) in a movable window.
 - **One-click request** - clicking a name targets the mage, sets the blue square marker,
   and sends your whisper.
 - **Own whisper text** - the whisper is freely configurable by chat command.
-- **Remembered** - settings are saved per account, or per character with one checkbox;
-  default is off.
-- **Settings page** - the on/off switch in the game menu under Options > AddOns, also
-  opened from the addon compartment menu.
+- **Remembered** - settings are saved per account, or per character with one checkbox.
+- **Settings page** - the per-character switch in the game menu under Options > AddOns,
+  also opened from the addon compartment menu.
 - **Chat commands** - every option can also be changed by slash command.
 
 Turn on friendly player nameplates (default key `Shift+V`) so mages nearby are found
@@ -29,10 +28,8 @@ without hovering or targeting them.
 
 ```text
 /wm                     show the current state
-/wm on                  start listing nearby mages
-/wm off                 stop listing nearby mages
+/wm scan                list the mages nearby
 /wm message "<text>"    set the whisper text
-/wm show                show the window again after closing it
 /wm character on        use settings for this character only
 /wm character off       use the account settings again
 /wm config              open the settings page
@@ -41,9 +38,11 @@ without hovering or targeting them.
 
 ## Examples
 
-- Turn it on once: `/wm on`. In a city, mages near you show up in the window; click one.
+- In a city, type `/wm scan`; mages near you show up in the window; click one.
+- Bind a key under Options > Keybindings > AddOns > "WaterMooch: Scan for mages" and press
+  it whenever you need water.
 - Change the request: `/wm message "Hey, could you open a portal to Stormwind? Tip ready!"`
-- Closed the window by mistake: `/wm show`.
+- Put `/wm scan` in a macro to scan from an action bar button.
 
 ## Develop
 

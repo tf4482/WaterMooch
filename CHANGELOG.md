@@ -8,6 +8,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Added
 
-- Window listing nearby friendly mages
+- Window listing nearby friendly mages on `/wm scan` or a key binding
 - Click on a name targets the mage, sets the blue square marker, and whispers them
 - Configurable whisper text (`/wm message`)
