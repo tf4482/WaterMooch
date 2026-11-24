@@ -15,6 +15,7 @@ them your own text, Alt+right click a second one.
 - **Target and mark** - left-click a name to target the mage and set the blue square marker.
 - **Whisper** - right-click the name to send your whisper, Alt+right-click to send the
   second one; a left click never whispers.
+- **Trade** - Alt+left-click a name to target the mage and open a trade.
 - **Own whisper texts** - type both whispers on the settings page Options > AddOns >
   WaterMooch, or set them by chat command.
 - **Random sentences** - give each whisper several sentences, one per line; a random one
