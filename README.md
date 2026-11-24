@@ -31,6 +31,12 @@ A scan switches friendly player nameplates on for a moment (0.5 seconds by defau
 adjustable from 0.01 to 3 seconds by slider or number field) when they are off, so mages
 nearby are found without hovering or targeting them; your setting is restored right after.
 
+## Screenshots
+
+![List of mages nearby](docs/list.png)
+
+![Settings page](docs/settings.png)
+
 ## Install
 
 1. Download `WaterMooch-vX.Y.Z.zip` from the releases (or CurseForge, Wago).
