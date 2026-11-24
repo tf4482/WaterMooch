@@ -4,6 +4,24 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-11-24
+
+### Added
+
+- `/wmooch reset` restores the default settings of the active profile.
+- `/wmooch debug on|off` shows what the addon does in chat, until `/reload`.
+- German texts for the shared chat messages (help, errors, on/off).
+
+### Changed
+
+- Short slash command is now `/wmooch`; `/wm` belongs to the game's world markers.
+- The scan key binding has its own section WaterMooch in Options > Keybindings.
+
+### Fixed
+
+- Nameplate settings switched by a scan are restored on the next login after a
+  disconnect or crash, and after a logout in combat.
+
 ## [0.1.0] - 2026-11-24
 
 ### Added
