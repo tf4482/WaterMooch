@@ -9,11 +9,11 @@
 ## SavedVariablesPerCharacter: WaterMoochCharDB
 ## X-Curse-Project-ID: 1827454
 
+Locale.lua
 Output.lua
 Store.lua
 Combat.lua
 Settings.lua
 Slash.lua
-Locale.lua
 WaterMooch.xml
 WaterMooch.lua
