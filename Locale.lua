@@ -1,74 +1,67 @@
--- WaterMooch texts: English by default, German on German clients
+-- Localized strings: English keys with German overrides on German clients; loads first in the TOC
 
 local _, ns = ...
 
--- English texts by key
-local L = {
-  BINDING = "WaterMooch: Scan for mages",
-  WINDOW_TITLE = "Dispenser nearby",
-  NO_TEXT = "no whisper text set - see %s",
-  NONE_FOUND = "no mages found nearby",
-  FOUND = "%s mage(s) found",
-  NOT_NOW = "scanning is not available right now",
-  WHISPER = "whisper (right click)",
-  ALT_WHISPER = "alt whisper (Alt+right click)",
-  PLATE_TIME = "nameplate time",
-  MIN_LEVEL = "minimum level",
-  PER_CHARACTER = "per character",
-  SCAN_HINT = "scan with %s or your key binding",
-  PLATE_TIME_LABEL = "Nameplate time",
-  MIN_LEVEL_LABEL = "Minimum level",
-  MIN_LEVEL_TOOLTIP = "Only list mages of this level or higher",
-  WHISPER_LABEL = "Whisper (right click)",
-  ALT_WHISPER_LABEL = "Whisper (Alt+right click)",
-  TEXT_HINT = "One sentence per line, a random one is sent; saved when leaving the field.",
-  HELP_SCAN = "list the mages nearby",
-  HELP_TIME = "seconds a scan shows friendly nameplates",
-  HELP_MINLEVEL = "only list mages of this level or higher",
-  HELP_ADD = "add the sentence as one more random choice",
-  HELP_MESSAGE = "set the right click whisper (use quotes)",
-  HELP_ALTMESSAGE = "set the Alt+right click whisper (use quotes)",
-  HELP_CHARACTER = "use settings for this character only, or the account's",
-  HELP_CONFIG = "open the settings page",
-  DEFAULT_MESSAGE = "Hi! Could you spare some water, please? Thank you!",
-  DEFAULT_ALT_MESSAGE = "Thank you so much for the water, have a great day!",
-}
+-- English defaults: any key without an override shows as itself
+ns.L = setmetatable({}, { __index = function(_, key) return key end })
 
--- German texts replace the English ones on German clients
+-- German overrides; component keys are the T("...") strings in the component files
 if GetLocale() == "deDE" then
-  local de = {
-    BINDING = "WaterMooch: Nach Magiern suchen",
-    WINDOW_TITLE = "Wasserspender in der Nähe",
-    NO_TEXT = "kein Flüstertext gesetzt - siehe %s",
-    NONE_FOUND = "keine Magier in der Nähe gefunden",
-    FOUND = "%s Magier gefunden",
-    NOT_NOW = "Suche gerade nicht möglich",
-    WHISPER = "Flüstern (Rechtsklick)",
-    ALT_WHISPER = "Alt-Flüstern (Alt+Rechtsklick)",
-    PLATE_TIME = "Namensplaketten-Zeit",
-    MIN_LEVEL = "Mindeststufe",
-    PER_CHARACTER = "pro Charakter",
-    SCAN_HINT = "Suche mit %s oder deiner Taste",
-    PLATE_TIME_LABEL = "Namensplaketten-Zeit",
-    MIN_LEVEL_LABEL = "Mindeststufe",
-    MIN_LEVEL_TOOLTIP = "Nur Magier ab dieser Stufe auflisten",
-    WHISPER_LABEL = "Flüstern (Rechtsklick)",
-    ALT_WHISPER_LABEL = "Flüstern (Alt+Rechtsklick)",
-    TEXT_HINT = "Ein Satz pro Zeile, ein zufälliger wird gesendet; gespeichert beim Verlassen des Feldes.",
-    HELP_SCAN = "Magier in der Nähe auflisten",
-    HELP_TIME = "Sekunden, die eine Suche freundliche Namensplaketten zeigt",
-    HELP_MINLEVEL = "nur Magier ab dieser Stufe auflisten",
-    HELP_ADD = "den Satz als weitere zufällige Auswahl hinzufügen",
-    HELP_MESSAGE = "Flüstertext für Rechtsklick setzen (in Anführungszeichen)",
-    HELP_ALTMESSAGE = "Flüstertext für Alt+Rechtsklick setzen (in Anführungszeichen)",
-    HELP_CHARACTER = "Einstellungen nur für diesen Charakter oder für den Account",
-    HELP_CONFIG = "Einstellungsseite öffnen",
-    DEFAULT_MESSAGE = "Hallo! Könntest du mir bitte etwas Wasser geben? Danke!",
-    DEFAULT_ALT_MESSAGE = "Vielen Dank für das Wasser, hab einen schönen Tag!",
-  }
-  for key, text in pairs(de) do
-    L[key] = text
-  end
+  local L = ns.L
+  -- shared components
+  L["on"] = "an"
+  L["off"] = "aus"
+  L["Per character"] = "Pro Charakter"
+  L["Save the settings below for this character only instead of the whole account"] =
+    "Die Einstellungen unten nur für diesen Charakter statt für den ganzen Account speichern"
+  L["commands"] = "Befehle"
+  L["show this help"] = "diese Hilfe anzeigen"
+  L["usage"] = "Aufruf"
+  L["unknown command"] = "unbekannter Befehl"
+  L["see"] = "siehe"
+  L["missing"] = "es fehlt"
+  L["must be a number"] = "muss eine Zahl sein"
+  L["from"] = "von"
+  L["to"] = "bis"
+  L["must be one of"] = "muss eins sein von"
+  L["unknown option"] = "unbekannte Option"
+  L["too many arguments"] = "zu viele Argumente"
+  -- addon texts
+  L["Scan for mages"] = "Nach Magiern suchen"
+  L["Dispenser nearby"] = "Wasserspender in der Nähe"
+  L["no whisper text set - see %s"] = "kein Flüstertext gesetzt - siehe %s"
+  L["no mages found nearby"] = "keine Magier in der Nähe gefunden"
+  L["%s mage(s) found"] = "%s Magier gefunden"
+  L["scanning is not available right now"] = "Suche gerade nicht möglich"
+  L["whisper (right click)"] = "Flüstern (Rechtsklick)"
+  L["alt whisper (Alt+right click)"] = "Alt-Flüstern (Alt+Rechtsklick)"
+  L["nameplate time"] = "Namensplaketten-Zeit"
+  L["minimum level"] = "Mindeststufe"
+  L["per character"] = "pro Charakter"
+  L["scan with %s or your key binding"] = "Suche mit %s oder deiner Taste"
+  L["Nameplate time"] = "Namensplaketten-Zeit"
+  L["Minimum level"] = "Mindeststufe"
+  L["Only list mages of this level or higher"] = "Nur Magier ab dieser Stufe auflisten"
+  L["Whisper (right click)"] = "Flüstern (Rechtsklick)"
+  L["Whisper (Alt+right click)"] = "Flüstern (Alt+Rechtsklick)"
+  L["One sentence per line, a random one is sent; saved when leaving the field."] =
+    "Ein Satz pro Zeile, ein zufälliger wird gesendet; gespeichert beim Verlassen des Feldes."
+  L["list the mages nearby"] = "Magier in der Nähe auflisten"
+  L["seconds a scan shows friendly nameplates"] = "Sekunden, die eine Suche freundliche Namensplaketten zeigt"
+  L["only list mages of this level or higher"] = "nur Magier ab dieser Stufe auflisten"
+  L["add the sentence as one more random choice"] = "den Satz als weitere zufällige Auswahl hinzufügen"
+  L["set the right click whisper (use quotes)"] = "Flüstertext für Rechtsklick setzen (in Anführungszeichen)"
+  L["set the Alt+right click whisper (use quotes)"] =
+    "Flüstertext für Alt+Rechtsklick setzen (in Anführungszeichen)"
+  L["use settings for this character only, or the account's"] =
+    "Einstellungen nur für diesen Charakter oder für den Account"
+  L["open the settings page"] = "Einstellungsseite öffnen"
+  L["reset the active profile's settings to defaults"] =
+    "Einstellungen des aktiven Profils auf Standard zurücksetzen"
+  L["show what the addon does in chat, until /reload"] = "im Chat zeigen, was das Addon tut, bis /reload"
+  L["settings reset to defaults"] = "Einstellungen auf Standard zurückgesetzt"
+  L["Hi! Could you spare some water, please? Thank you!"] =
+    "Hallo! Könntest du mir bitte etwas Wasser geben? Danke!"
+  L["Thank you so much for the water, have a great day!"] =
+    "Vielen Dank für das Wasser, hab einen schönen Tag!"
 end
-
-ns.L = L

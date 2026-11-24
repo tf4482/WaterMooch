@@ -1,6 +1,7 @@
-<!-- Key binding: Options > Keybindings > AddOns > WaterMooch: Scan for mages -->
+<!-- Key binding in its own section of Options > Keybindings: WaterMooch > Scan for mages;
+     WaterMooch.lua sets the BINDING_NAME_* label -->
 <Bindings>
-  <Binding name="WATERMOOCH_SCAN" category="ADDONS">
+  <Binding name="WATERMOOCH_SCAN" category="WaterMooch">
     SlashCmdList.WATERMOOCH("scan")
   </Binding>
 </Bindings>

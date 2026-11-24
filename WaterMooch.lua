@@ -41,8 +41,8 @@ end
 -- last sighting of each mage by unit name: { time, level, guild }
 local seen = {}
 
--- label in Options > Keybindings > AddOns
-_G["BINDING_NAME_WATERMOOCH_SCAN"] = L.BINDING
+-- label in the addon's own section of Options > Keybindings
+BINDING_NAME_WATERMOOCH_SCAN = L["Scan for mages"]
 
 -- non-empty, trimmed lines of a saved whisper set: one alternative per line
 local function Lines(key)
@@ -60,7 +60,7 @@ end
 local function Whisper(name, key)
   local lines = Lines(key)
   if #lines == 0 then
-    return ns.Error(format(L.NO_TEXT, ns.slash .. " config"))
+    return ns.Error(format(L["no whisper text set - see %s"], ns.slash .. " config"))
   end
   local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
   send(lines[math.random(#lines)], "WHISPER", nil, name)
@@ -77,7 +77,7 @@ window:RegisterForDrag("LeftButton")
 window:SetScript("OnDragStart", window.StartMoving)
 window:SetScript("OnDragStop", window.StopMovingOrSizing)
 window:Hide()
-window.TitleText:SetText(L.WINDOW_TITLE)
+window.TitleText:SetText(L["Dispenser nearby"])
 
 -- secure row buttons: left click targets and marks, right click whispers
 local rows = {}
@@ -117,6 +117,7 @@ local function See(unit)
     -- -1 means far above the player's level
     local level = UnitLevel(unit)
     seen[name] = { time = GetTime(), level = level < 0 and math.huge or level, guild = GetGuildInfo(unit) }
+    ns.Debug("seen " .. name .. " (" .. unit .. ")")
   end
 end
 
@@ -153,8 +154,9 @@ local function Render(names)
   window:SetShown(shown > 0)
 end
 
--- nameplate settings switched on for a scan, with the player's values to restore
-local switched = {}
+-- nameplate settings switched on for a scan, with the player's values to restore;
+-- saved per character so a disconnect or crash still restores them on the next login
+ns.Store("WaterMoochCharDB", { switched = {} }, nil, "char")
 -- a scan is waiting for nameplates to appear
 local scanning = false
 
@@ -163,6 +165,7 @@ local function ShowPlates()
   -- 12.x name first, older clients second; nameplateShowAll shows plates out of combat
   local friendly = C_CVar.GetCVar("nameplateShowFriendlyPlayers") and "nameplateShowFriendlyPlayers"
     or "nameplateShowFriends"
+  local switched = ns.char.switched
   for _, cvar in ipairs({ "nameplateShowAll", friendly }) do
     local value = C_CVar.GetCVar(cvar)
     if value and value ~= "1" then
@@ -175,6 +178,7 @@ end
 
 -- put the player's nameplate settings back; only out of combat
 local function RestorePlates()
+  local switched = ns.char.switched
   for cvar, value in pairs(switched) do
     C_CVar.SetCVar(cvar, value)
     switched[cvar] = nil
@@ -212,21 +216,22 @@ local function Collect()
   table.sort(names)
   Render(names)
   if #names == 0 then
-    ns.Warn(L.NONE_FOUND)
+    ns.Warn(L["no mages found nearby"])
   else
-    ns.Print(format(L.FOUND, ns.Color("value", #names)))
+    ns.Print(format(L["%s mage(s) found"], ns.Color("value", #names)))
   end
 end
 
 -- one scan; switches friendly nameplates on briefly when they are off
 local function Scan()
   if InCombatLockdown() then
-    return ns.Error(L.NOT_NOW)
+    return ns.Error(L["scanning is not available right now"])
   elseif scanning then
     return
   end
   if ShowPlates() then
     -- nameplates appear over the next frames
+    ns.Debug("nameplates switched on for " .. ns.Get("plateTime") .. " s")
     scanning = true
     C_Timer.After(ns.Get("plateTime"), Collect)
   else
@@ -244,12 +249,12 @@ end
 
 -- current state
 local function Status()
-  ShowSet(L.WHISPER, "message")
-  ShowSet(L.ALT_WHISPER, "altMessage")
-  ns.Status(L.PLATE_TIME, FormatTime(ns.Get("plateTime")) .. " s")
-  ns.Status(L.MIN_LEVEL, ns.Get("minLevel"))
-  ns.Status(L.PER_CHARACTER, ns.OnOff(ns.char.perCharacter))
-  ns.Detail(format(L.SCAN_HINT, ns.Color("command", ns.slash .. " scan")))
+  ShowSet(L["whisper (right click)"], "message")
+  ShowSet(L["alt whisper (Alt+right click)"], "altMessage")
+  ns.Status(L["nameplate time"], FormatTime(ns.Get("plateTime")) .. " s")
+  ns.Status(L["minimum level"], ns.Get("minLevel"))
+  ns.Status(L["per character"], ns.OnOff(ns.char.perCharacter))
+  ns.Detail(format(L["scan with %s or your key binding"], ns.Color("command", ns.slash .. " scan")))
 end
 
 -- switch per-character settings and report the new state
@@ -258,10 +263,17 @@ local function PerCharacter(enabled)
   Status()
 end
 
--- save a setting in the active profile, for controls Settings.lua does not offer
-local function SaveValue(key, value)
-  local profile = ns.char.perCharacter and ns.char or ns.db
-  profile[key] = value
+-- settings with an own page element; registered so ns.Set, reset, and the page reach them
+local OWN_SETTINGS = { "plateTime", "message", "altMessage" }
+
+-- register a proxy setting for a key of the active profile; onChange runs after each change
+local function Register(key, label, onChange)
+  local default = ns.defaults.db[key]
+  local setting = Settings.RegisterProxySetting(ns.Category, ADDON .. "_" .. key, type(default),
+    label, default,
+    function() return ns.Get(key) end,
+    function(value) (ns.char.perCharacter and ns.char or ns.db)[key] = value end)
+  setting:SetValueChangedCallback(onChange)
 end
 
 -- text fields shown on the settings page, by setting key
@@ -270,7 +282,7 @@ local inputs = {}
 -- show the texts of the active profile in the visible fields
 local function RefreshInputs()
   for key, input in pairs(inputs) do
-    if input:IsVisible() then
+    if input:IsVisible() and not input:HasFocus() then
       input:SetText(ns.Get(key))
       input:SetCursorPosition(0)
     end
@@ -278,7 +290,8 @@ local function RefreshInputs()
 end
 
 -- multi-line field on the addon's settings page for the whisper set saved under key
-local function AddTextArea(category, key, label, hint)
+local function AddTextArea(key, label, hint)
+  Register(key, label, RefreshInputs)
   local initializer = Settings.CreateElementInitializer("WaterMoochTextAreaTemplate", { name = label })
   -- fill a list frame from the template whenever the page shows it
   initializer.InitFrame = function(_, frame)
@@ -290,7 +303,7 @@ local function AddTextArea(category, key, label, hint)
     input:SetCursorPosition(0)
     -- save the typed lines
     input:SetScript("OnEditFocusLost", function(self)
-      SaveValue(key, self:GetText())
+      ns.Set(key, self:GetText())
     end)
     -- discard the typing and show the saved lines again
     input:SetScript("OnEscapePressed", function(self)
@@ -299,51 +312,45 @@ local function AddTextArea(category, key, label, hint)
     end)
     inputs[key] = input
   end
-  Settings.RegisterInitializer(category, initializer)
-end
-
--- the addon's settings category created by ns.Settings
-local function FindCategory()
-  local title = C_AddOns.GetAddOnMetadata(ADDON, "Title") or ADDON
-  for _, category in ipairs(SettingsPanel:GetAllCategories()) do
-    if category:GetName() == title then
-      return category
-    end
-  end
+  Settings.RegisterInitializer(ns.Category, initializer)
 end
 
 -- nameplate time element currently shown on the settings page
 local timeFrame
+-- guard against slider callbacks caused by ShowTime itself
+local showing = false
 
 -- show the saved nameplate time in the visible element
 local function ShowTime()
   if timeFrame and timeFrame:IsVisible() then
     local seconds = ns.Get("plateTime")
+    showing = true
     timeFrame.Slider:SetValue(TimeStep(seconds))
+    showing = false
     timeFrame.Input:SetText(FormatTime(seconds))
   end
 end
 
 -- save a nameplate time, snapped to the slider steps
 local function SetTime(seconds)
-  SaveValue("plateTime", StepTime(TimeStep(seconds)))
-  ShowTime()
+  ns.Set("plateTime", StepTime(TimeStep(seconds)))
 end
 
 -- nameplate time slider with 0.01 steps below 0.1 and a number field to its right;
 -- ns.Slider has neither uneven steps nor a number field
-local function AddTimeSlider(category)
-  local initializer = Settings.CreateElementInitializer("WaterMoochTimeTemplate", { name = L.PLATE_TIME_LABEL })
+local function AddTimeSlider()
+  Register("plateTime", L["Nameplate time"], ShowTime)
+  local initializer = Settings.CreateElementInitializer("WaterMoochTimeTemplate", { name = L["Nameplate time"] })
   -- fill a list frame from the template whenever the page shows it
   initializer.InitFrame = function(_, frame)
     timeFrame = frame
-    frame.Label:SetText(L.PLATE_TIME_LABEL)
+    frame.Label:SetText(L["Nameplate time"])
     frame.Slider:Init(TimeStep(ns.Get("plateTime")), 1, TIME_STEPS, TIME_STEPS - 1)
-    -- slider moved: save and show the new time
+    -- slider moved by the player: save and show the new time
     frame.Slider:RegisterCallback(MinimalSliderWithSteppersMixin.Event.OnValueChanged, function(_, step)
-      local seconds = StepTime(math.floor(step + 0.5))
-      SaveValue("plateTime", seconds)
-      frame.Input:SetText(FormatTime(seconds))
+      if not showing then
+        ns.Set("plateTime", StepTime(math.floor(step + 0.5)))
+      end
     end, frame)
     local input = frame.Input
     input:SetText(FormatTime(ns.Get("plateTime")))
@@ -363,19 +370,7 @@ local function AddTimeSlider(category)
       self:ClearFocus()
     end)
   end
-  Settings.RegisterInitializer(category, initializer)
-  Settings.SetOnValueChangedCallback(ADDON .. "_perCharacter", ShowTime)
-end
-
--- add the scan key binding and both whisper fields below the addon's settings controls
-local function AddSettingsFields(category)
-  local binding = C_KeyBindings.GetBindingIndex("WATERMOOCH_SCAN")
-  if binding then
-    Settings.RegisterInitializer(category, CreateKeybindingEntryInitializer(binding, true))
-  end
-  AddTextArea(category, "message", L.WHISPER_LABEL, L.TEXT_HINT)
-  AddTextArea(category, "altMessage", L.ALT_WHISPER_LABEL, L.TEXT_HINT)
-  Settings.SetOnValueChangedCallback(ADDON .. "_perCharacter", RefreshInputs)
+  Settings.RegisterInitializer(ns.Category, initializer)
 end
 
 -- event handlers by event name
@@ -396,9 +391,18 @@ function events.PLAYER_TARGET_CHANGED()
   See("target")
 end
 
--- logout or reload during a scan: keep the player's nameplate settings
+-- nameplate settings still switched from a lost session: restore them out of combat
+function events.PLAYER_LOGIN()
+  if next(ns.char.switched) then
+    ns.Debug("restoring nameplate settings from the last session")
+    ns.AfterCombat(RestorePlates)
+  end
+end
+
+-- logout or reload during a scan: keep the player's nameplate settings; in combat they
+-- stay saved for the next login
 function events.PLAYER_LOGOUT()
-  RestorePlates()
+  ns.AfterCombat(RestorePlates)
 end
 
 -- secure rows cannot be hidden later: close the window now
@@ -409,7 +413,8 @@ end
 -- one frame dispatching all events above
 local frame = CreateFrame("Frame")
 for event in pairs(events) do
-  frame:RegisterEvent(event)
+  -- skip events this client does not know
+  if C_EventUtils.IsEventValid(event) then frame:RegisterEvent(event) end
 end
 frame:SetScript("OnEvent", function(_, event, ...)
   events[event](...)
@@ -417,8 +422,8 @@ end)
 
 -- saved state; settings page once loaded
 ns.Store("WaterMoochDB", {
-  message = L.DEFAULT_MESSAGE,
-  altMessage = L.DEFAULT_ALT_MESSAGE,
+  message = L["Hi! Could you spare some water, please? Thank you!"],
+  altMessage = L["Thank you so much for the water, have a great day!"],
   plateTime = 0.5,
   minLevel = 1,
 }, function(db)
@@ -429,31 +434,38 @@ ns.Store("WaterMoochDB", {
     end
   end
   ns.Settings()
-  local category = FindCategory()
-  AddTimeSlider(category)
+  AddTimeSlider()
   local maxLevel = GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion() or 80
-  ns.Slider("minLevel", L.MIN_LEVEL_LABEL, 1, math.max(maxLevel, 1), 1, L.MIN_LEVEL_TOOLTIP)
-  AddSettingsFields(category)
+  ns.Slider("minLevel", L["Minimum level"], 1, math.max(maxLevel, 1), 1, L["Only list mages of this level or higher"])
+  ns.Keybinding("WATERMOOCH_SCAN", L["Scan for mages"])
+  local hint = L["One sentence per line, a random one is sent; saved when leaving the field."]
+  AddTextArea("message", L["Whisper (right click)"], hint)
+  AddTextArea("altMessage", L["Whisper (Alt+right click)"], hint)
+  -- own elements show the values of the new profile after a switch
+  Settings.SetOnValueChangedCallback(ADDON .. "_perCharacter", function()
+    ShowTime()
+    RefreshInputs()
+  end)
 end)
 
 -- chat commands
-ns.Command({ name = "scan", help = L.HELP_SCAN, run = Scan })
+ns.Command({ name = "scan", help = L["list the mages nearby"], run = Scan })
 ns.Command({
   name = "time",
-  help = L.HELP_TIME,
+  help = L["seconds a scan shows friendly nameplates"],
   args = { { name = "seconds", type = "number", min = 0.01, max = 3 } },
   run = function(args)
     SetTime(args.seconds)
-    ns.Status(L.PLATE_TIME, FormatTime(ns.Get("plateTime")) .. " s")
+    ns.Status(L["nameplate time"], FormatTime(ns.Get("plateTime")) .. " s")
   end,
 })
 ns.Command({
   name = "minlevel",
-  help = L.HELP_MINLEVEL,
+  help = L["only list mages of this level or higher"],
   args = { { name = "level", type = "number", min = 1 } },
   run = function(args)
     ns.Set("minLevel", math.floor(args.level))
-    ns.Status(L.MIN_LEVEL, math.floor(args.level))
+    ns.Status(L["minimum level"], math.floor(args.level))
   end,
 })
 -- chat command that replaces a whisper set or adds a sentence to it
@@ -462,25 +474,47 @@ local function MessageCommand(name, key, label, help)
     name = name,
     help = help,
     args = { { name = "text" } },
-    options = { { name = "add", help = L.HELP_ADD } },
+    options = { { name = "add", help = L["add the sentence as one more random choice"] } },
     run = function(args, options)
       local text = args.text
       if options.add and #Lines(key) > 0 then
         text = ns.Get(key) .. "\n" .. text
       end
-      SaveValue(key, text)
+      ns.Set(key, text)
       ShowSet(label, key)
     end,
   })
 end
 
-MessageCommand("message", "message", L.WHISPER, L.HELP_MESSAGE)
-MessageCommand("altmessage", "altMessage", L.ALT_WHISPER, L.HELP_ALTMESSAGE)
+MessageCommand("message", "message", L["whisper (right click)"], L["set the right click whisper (use quotes)"])
+MessageCommand("altmessage", "altMessage", L["alt whisper (Alt+right click)"],
+  L["set the Alt+right click whisper (use quotes)"])
 ns.Command({
   name = "character",
-  help = L.HELP_CHARACTER,
+  help = L["use settings for this character only, or the account's"],
   args = { { name = "state", choices = { "on", "off" } } },
   run = function(args) PerCharacter(args.state == "on") end,
 })
-ns.Command({ name = "config", help = L.HELP_CONFIG, run = ns.OpenSettings })
-ns.Slash({ "/wm", "/watermooch" }, Status)
+ns.Command({
+  name = "reset",
+  help = L["reset the active profile's settings to defaults"],
+  run = function()
+    ns.ResetSettings()
+    for _, key in ipairs(OWN_SETTINGS) do
+      ns.Set(key, ns.defaults.db[key])
+    end
+    ns.Success(L["settings reset to defaults"])
+    Status()
+  end,
+})
+ns.Command({
+  name = "debug",
+  help = L["show what the addon does in chat, until /reload"],
+  args = { { name = "state", choices = { "on", "off" } } },
+  run = function(args)
+    ns.debug = args.state == "on"
+    ns.Status("debug", ns.OnOff(ns.debug))
+  end,
+})
+ns.Command({ name = "config", help = L["open the settings page"], run = ns.OpenSettings })
+ns.Slash({ "/wmooch", "/watermooch" }, Status)
