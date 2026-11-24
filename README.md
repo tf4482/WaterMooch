@@ -26,8 +26,8 @@ them your own text, Alt+right click a second one.
 - **Chat commands** - every option can also be changed by slash command.
 
 A scan switches friendly player nameplates on for a moment (0.5 seconds by default,
-adjustable by slider) when they are off, so mages nearby are found without hovering or
-targeting them; your setting is restored right after.
+adjustable from 0.01 to 3 seconds by slider or number field) when they are off, so mages
+nearby are found without hovering or targeting them; your setting is restored right after.
 
 ## Install
 
@@ -40,7 +40,7 @@ targeting them; your setting is restored right after.
 ```text
 /wm                      show the current state
 /wm scan                 list the mages nearby
-/wm time <seconds>       how long a scan shows nameplates (0.1 to 3)
+/wm time <seconds>       how long a scan shows nameplates (0.01 to 3)
 /wm minlevel <level>     only list mages of this level or higher
 /wm message "<text>"     set the right click whisper (add --add for one more sentence)
 /wm altmessage "<text>"  set the Alt+right click whisper (also with --add)
