@@ -88,8 +88,8 @@ for index = 1, ROWS do
   row:SetPoint("TOPRIGHT", window, "TOPRIGHT", -12, -28 - (index - 1) * ROW_HEIGHT)
   -- both phases so the click works with either ActionButtonUseKeyDown setting
   row:RegisterForClicks("AnyUp", "AnyDown")
-  -- only the left button runs the target macro
-  row:SetAttribute("type1", "macro")
+  -- only the left button runs a macro, with or without modifier keys
+  row:SetAttribute("*type1", "macro")
   row:SetHighlightTexture("Interface/QuestFrame/UI-QuestTitleHighlight", "ADD")
   local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   label:SetPoint("LEFT", row, "LEFT", 4, 0)
@@ -133,6 +133,9 @@ local function Render(names)
       -- square, and stop when the mage could not be targeted
       row:SetAttribute("macrotext", "/cleartarget\n/targetexact " .. name
         .. "\n/stopmacro [noexists]\n/tm !" .. SQUARE)
+      -- Alt+left click: target the same way, then open a trade
+      row:SetAttribute("alt-macrotext1", "/cleartarget\n/targetexact " .. name
+        .. "\n/stopmacro [noexists]\n/trade")
       -- name, level ("??" far above the player), and <guild> when there is one
       local sighting = seen[name]
       local level = sighting.level == math.huge and "??" or sighting.level
