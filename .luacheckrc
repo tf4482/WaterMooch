@@ -25,6 +25,7 @@ read_globals = {
   "IsInRaid",
   "MinimalSliderWithSteppersMixin",
   "Settings",
+  "SettingsDropdownControlMixin",
   "C_ChatInfo",
   "C_CVar",
   "C_NamePlate",
