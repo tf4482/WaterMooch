@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Shared settings component updated; no visible change
+
 ## [0.2.0] - 2026-11-24
 
 ### Added
