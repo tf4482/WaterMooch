@@ -20,6 +20,7 @@
     "IsInRaid",
     "MinimalSliderWithSteppersMixin",
     "Settings",
+    "SettingsDropdownControlMixin",
     "BINDING_NAME_WATERMOOCH_SCAN",
     "C_ChatInfo",
     "C_CVar",
